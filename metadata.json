@@ -17,11 +17,11 @@
   "test_prompts": [
     {
       "prompt_id": "tp_001",
-      "prompt": "A coffee farmer in Uganda sends a leaf photo showing yellow-orange powdery spots on the underside. What disease is likely present and what immediate countermeasures should they take?"
+      "prompt": "A farmer uploaded a coffee leaf photo in our offline CoffeeVision app. The ONNX classifier returned: class=Leaf rust, confidence=91%. List immediate countermeasures the farmer should take today to limit spread across the farm."
     },
     {
       "prompt_id": "tp_002",
-      "prompt": "In Kiswahili, advise a smallholder coffee farmer on early signs of Phoma leaf disease, prevention steps, and when to apply fungicides."
+      "prompt": "Mkulima amepakia picha ya jani kupitia CoffeeVision (nje ya mtandao). Mfumo ukagua Phoma, uhakika 88%. Andika ushauri wa haraka kwa Kiswahili: dalili, hatua za kuzuia, na lini kutumia dawa ya kuua kuvu."
     }
   ],
   "model": {
@@ -32,8 +32,6 @@
     "packaging": "binary_bundle"
   },
   "_runtime": {
-    "model_path": "model/SmolLM2-360M-Instruct-Q4_K_M.gguf",
-    "classifier_path": "model/coffee_model.onnx",
-    "app_entry": "app/onnx_server.py"
+    "model_path": "model/SmolLM2-360M-Instruct-Q4_K_M.gguf"
   }
 }

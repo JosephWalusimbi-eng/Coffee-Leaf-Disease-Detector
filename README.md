@@ -12,7 +12,7 @@ Offline bilingual (English / Kiswahili) web app for **coffee leaf disease detect
 
 Developed by **Joseph Walusimbi** and **Chelangat Specioza**, Electronics & Computer Engineers, Soroti University, Uganda.
 
-Developed and benchmarked on an **HP EliteBook** (Intel Core i5 @ 2.20 GHz, 8 GB RAM, 500 GB storage).
+Developed and benchmarked on an **HP EliteBook** (Intel Core i5 @ 2.20 GHz, 8 GB RAM, 256GB GB storage).
 
 This repository follows the [ADTC 2026 submission template](https://github.com/Africa-Deep-Tech-Foundation/adtc-2026-submission-template) for the **agriculture** domain on the [Laptop LLM Challenge](https://adtc-2026.devpost.com/).
 
