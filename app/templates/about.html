@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <title>{{ t.nav_about }} | {{ brand_name }}</title>
+  {% include '_head.html' %}
+</head>
+<body class="min-h-screen flex flex-col page-with-bg">
+  {% include '_navbar.html' %}
+
+  <div class="flex justify-center items-center flex-grow mt-24 p-6">
+    <div class="bg-opacity-90 text-gray-900 shadow-lg rounded-2xl p-8 w-full max-w-2xl text-center" style="background: rgba(255,255,255,0.9); border-radius: 1rem;">
+      <h1 class="text-3xl font-bold mb-4 text-blue-700">{{ t.about_title }}</h1>
+      <p class="text-lg mb-4">{{ t.about_p1 }}</p>
+      <p class="text-lg mb-4">{{ t.about_p2 }}</p>
+      <p class="text-md text-gray-700">{{ t.about_p3 | safe }}</p>
+    </div>
+  </div>
+
+  <footer class="bg-gray-800 text-white p-4 text-center">{{ footer_text }}</footer>
+</body>
+</html>

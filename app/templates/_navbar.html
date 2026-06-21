@@ -1,0 +1,13 @@
+<nav class="nav-bar">
+  <div class="container nav-inner">
+    <span class="nav-brand">{{ brand_name }}</span>
+    <div class="nav-links">
+      <a href="{{ url_for('home') }}" class="nav-link {% if request.endpoint == 'home' %}active{% endif %}">{{ t.nav_home }}</a>
+      <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}active{% endif %}">{{ t.nav_about }}</a>
+      <a href="{{ url_for('team') }}" class="nav-link {% if request.endpoint == 'team' %}active{% endif %}">{{ t.nav_team }}</a>
+      <a href="{{ url_for('contact') }}" class="nav-link {% if request.endpoint == 'contact' %}active{% endif %}">{{ t.nav_contact }}</a>
+      <a href="{{ url_for('logout') }}" class="nav-link logout">{{ t.nav_logout }}</a>
+    </div>
+    {% with auth_nav=True %}{% include '_lang_switcher.html' %}{% endwith %}
+  </div>
+</nav>

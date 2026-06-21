@@ -1,0 +1,8 @@
+<div class="lang-switcher {% if auth_nav %}on-nav{% else %}on-auth{% endif %}">
+  <span class="{% if auth_nav %}label-nav{% else %}label-auth{% endif %}">{{ t.language }}:</span>
+  <a href="{{ url_for('set_language', lang='en', next=request.path) }}"
+     class="{% if lang == 'en' %}active{% endif %}">{{ t.lang_en }}</a>
+  <span class="{% if auth_nav %}divider-nav{% else %}divider-auth{% endif %}">|</span>
+  <a href="{{ url_for('set_language', lang='sw', next=request.path) }}"
+     class="{% if lang == 'sw' %}active{% endif %}">{{ t.lang_sw }}</a>
+</div>

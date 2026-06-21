@@ -1,0 +1,39 @@
+{
+  "team_id": "REPLACE_WITH_YOUR_ADTF_TEAM_ID",
+  "domain": "agriculture",
+  "language_scope": ["en", "sw"],
+  "african_alpha_claim": true,
+  "budget_laptop_claim": true,
+  "submitter": {
+    "name": "Joseph Walusimbi",
+    "email": "mrjosephwalusimbi@gmail.com",
+    "github_handle": "JosephWalusimbi-eng"
+  },
+  "cross_disciplinary_pairing": {
+    "discipline": "agriculture",
+    "load_bearing": true,
+    "description": "Hybrid offline agriculture assistant: ONNX CNN classifies coffee leaf images (healthy, Leaf rust, Phoma); GGUF LLM provides bilingual farmer advisories on the same 8 GB laptop without cloud APIs."
+  },
+  "test_prompts": [
+    {
+      "prompt_id": "tp_001",
+      "prompt": "A coffee farmer in Uganda sends a leaf photo showing yellow-orange powdery spots on the underside. What disease is likely present and what immediate countermeasures should they take?"
+    },
+    {
+      "prompt_id": "tp_002",
+      "prompt": "In Kiswahili, advise a smallholder coffee farmer on early signs of Phoma leaf disease, prevention steps, and when to apply fungicides."
+    }
+  ],
+  "model": {
+    "name": "SmolLM2-360M-Instruct-Q4_K_M",
+    "runtime": "llama.cpp",
+    "quantization": "GGUF Q4_K_M",
+    "parameters_estimate": "360M",
+    "packaging": "binary_bundle"
+  },
+  "_runtime": {
+    "model_path": "model/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+    "classifier_path": "model/coffee_model.onnx",
+    "app_entry": "app/onnx_server.py"
+  }
+}

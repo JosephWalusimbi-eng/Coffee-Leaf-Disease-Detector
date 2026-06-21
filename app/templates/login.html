@@ -1,41 +1,46 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
-  <title>{{ t.create_account }} | {{ brand_name }}</title>
+  <title>{{ brand_full }}</title>
   {% include '_head.html' %}
 </head>
 <body class="auth-page">
-  <div class="absolute top-4 left-0 right-0 flex justify-center">{% include '_lang_switcher.html' %}</div>
+  <div class="mb-4">{% include '_lang_switcher.html' %}</div>
+
+  <div class="text-center mb-8 max-w-3xl">
+    <h1 class="auth-heading">{{ t.app_title }}</h1>
+    <p class="auth-subtitle">{{ t.app_subtitle }}</p>
+  </div>
 
   <div class="card max-w-md">
-    <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">{{ t.create_account }}</h1>
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">{{ t.login }}</h2>
 
     {% if error %}
     <p class="text-red-500 text-center mb-3">{{ error }}</p>
     {% endif %}
 
-    <form action="{{ url_for('register') }}" method="POST" class="space-y-4">
+    <form action="{{ url_for('login_page') }}" method="POST" class="space-y-4">
       <div>
         <label class="text-gray-700 font-medium mb-2">{{ t.language }}</label>
-        <select name="lang" class="select-green">
+        <select name="lang">
           <option value="en" {% if lang == 'en' %}selected{% endif %}>{{ t.lang_en }}</option>
           <option value="sw" {% if lang == 'sw' %}selected{% endif %}>{{ t.lang_sw }}</option>
         </select>
       </div>
       <div>
         <label class="text-gray-700 font-medium">{{ t.username }}</label>
-        <input type="text" name="username" value="{{ username or '' }}" required>
+        <input type="text" name="username" required>
       </div>
       <div>
         <label class="text-gray-700 font-medium">{{ t.password }}</label>
         <input type="password" name="password" required>
       </div>
-      <button type="submit" class="btn btn-green btn-block">{{ t.register }}</button>
+      <button type="submit" class="btn btn-blue btn-block">{{ t.login }}</button>
     </form>
 
     <p class="mt-4 text-center text-gray-600">
-      {{ t.have_account }}
-      <a href="{{ url_for('login_page') }}" class="text-blue-500 underline">{{ t.login_here }}</a>
+      {{ t.no_account }}
+      <a href="{{ url_for('register') }}" class="text-green-600 underline font-medium">{{ t.create_one }}</a>
     </p>
   </div>
 
