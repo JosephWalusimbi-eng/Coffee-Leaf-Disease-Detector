@@ -1,4 +1,4 @@
-# CoffeeVision — ADTC 2026 Submission
+# CoffeeVision - ADTC 2026 Submission
 
 **CoffeeVision: AI-based Coffee leaf disease detector and Advisory system**
 
