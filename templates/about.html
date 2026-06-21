@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - Coffee Disease Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-image: url('/static/images/photo.avif');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      animation: moveBg 10s infinite alternate ease-in-out;
+    }
+    @keyframes moveBg {
+      0% { background-size: 100% auto; }
+      50% { background-size: 110% auto; }
+      100% { background-size: 100% auto; }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+  <!-- Navbar -->
+ <nav class="bg-[#1E3A8A] p-4 shadow-lg fixed w-full z-50">
+    <div class="container mx-auto flex justify-center space-x-6">
+      <a href="{{ url_for('home') }}" 
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'home' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Home
+      </a>
+      <a href="{{ url_for('about') }}" 
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'about' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        About Us
+      </a>
+      <a href="{{ url_for('team') }}" 
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'team' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Team
+      </a>
+      <a href="{{ url_for('contact') }}" 
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'contact' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Contact Us
+      </a>
+      <a href="{{ url_for('logout') }}" 
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'logout' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-red-400{% endif %}">
+        Logout
+      </a>
+    </div>
+  </nav>
+
+  <!-- Content -->
+  <div class="flex justify-center items-center flex-grow mt-16 p-6">
+    <div class="bg-white bg-opacity-90 text-gray-900 shadow-lg rounded-2xl p-8 w-full max-w-2xl text-center">
+      <h1 class="text-3xl font-bold mb-4 text-blue-700">About Us</h1>
+      <p class="text-lg mb-4">
+        Our Coffee Leaf Disease Detection System leverages Artificial Intelligence to help farmers
+        identify and classify coffee leaf diseases such as Leaf Rust and Phoma early.
+        This empowers farmers to take timely preventive measures, reducing crop losses and improving yields.
+      </p>
+      <p class="text-lg mb-4">
+        The project aims to support sustainable coffee farming in Uganda and promote digital agriculture solutions.
+      </p>
+      <p class="text-md text-gray-700">
+        Developed by <b>Joseph Walusimbi and Chelangat Specioza</b>  passionate data analysts and AI enthusiasts
+        focused on applying machine learning to solve real-world challenges in agriculture and climate.
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white p-4 text-center">
+    &copy; 2026 Coffee Classify | All rights reserved
+  </footer>
+
+</body>
+</html>

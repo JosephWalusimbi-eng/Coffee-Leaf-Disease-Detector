@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us - Coffee Disease Detection</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-image: url('/static/images/photo.avif');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      animation: moveBg 10s infinite alternate ease-in-out;
+      color: white;
+    }
+    @keyframes moveBg {
+      0% { background-size: 100% auto; }
+      50% { background-size: 110% auto; }
+      100% { background-size: 100% auto; }
+    }
+  </style>
+</head>
+<body class="flex flex-col min-h-screen">
+  <!-- Navbar -->
+  <nav class="bg-[#1E3A8A] p-4 shadow-lg fixed w-full z-50">
+    <div class="container mx-auto flex justify-center space-x-6">
+      <a href="{{ url_for('home') }}"
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'home' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Home
+      </a>
+      <a href="{{ url_for('about') }}"
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'about' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        About Us
+      </a>
+      <a href="{{ url_for('team') }}"
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'team' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Team
+      </a>
+      <a href="{{ url_for('contact') }}"
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'contact' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-white{% endif %}">
+        Contact Us
+      </a>
+      <a href="{{ url_for('logout') }}"
+         class="font-bold px-3 py-1 rounded {% if request.endpoint == 'logout' %}bg-blue-400 text-white{% else %}text-gray-200 hover:text-red-400{% endif %}">
+        Logout
+      </a>
+    </div>
+  </nav>
+
+  <!-- Main Section -->
+  <div class="container mx-auto mt-24 p-6 text-center flex-grow">
+    <h1 class="text-3xl font-bold text-white mb-6">Contact Us</h1>
+
+    <div class="max-w-md mx-auto bg-black/40 shadow-lg rounded-lg p-8 backdrop-blur-sm text-lg text-white space-y-4">
+      <p>
+        Contact Us on Email:
+        <a href="mailto:mrjosephwalusimbi@gmail.com" class="text-blue-300 underline">mrjosephwalusimbi@gmail.com</a>
+      </p>
+      <p>
+        Tel:
+        <a href="tel:+256764123306" class="text-blue-300 underline">+256764123306</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white p-4 text-center mt-auto">
+    &copy; 2026 Coffee Classify | All rights reserved
+  </footer>
+</body>
+</html>
