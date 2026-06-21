@@ -6,9 +6,9 @@ Offline bilingual (English / Kiswahili) web app for **coffee leaf disease detect
 
 | Capability | Technology |
 |------------|------------|
-| **Leaf classification** | ONNX CNN — healthy leaves, Leaf rust, Phoma |
+| **Leaf classification** | ONNX CNN - healthy leaves, Leaf rust, Phoma |
 | **AI advisories** | Structured curated content (English / Kiswahili locales) — Symptoms + Countermeasures |
-| **Farmer chatbot** | GGUF LLM — natural conversational follow-up questions |
+| **Farmer chatbot** | GGUF LLM - natural conversational follow-up questions |
 
 Developed by **Joseph Walusimbi** and **Chelangat Specioza**, Electronics & Computer Engineers, Soroti University, Uganda.
 
