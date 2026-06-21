@@ -1,6 +1,5 @@
-# =============================================================================
-# ADTC 2026 + CoffeeVision — do NOT commit these
-# =============================================================================
+
+CoffeeVision — do NOT commit these
 
 # Model weights (download via download_model.sh / download_classifier.sh)
 model/*.gguf
