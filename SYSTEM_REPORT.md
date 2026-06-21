@@ -1,4 +1,4 @@
-# System Report — AI-Based Coffee Leaf Disease Detector and Advisory System
+# System Report —  Coffee Leaf Disease Detector and Advisory System
 
 **Document version:** 1.0  
 **Date:** June 2026  

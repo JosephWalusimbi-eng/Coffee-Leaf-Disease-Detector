@@ -1,4 +1,50 @@
-# Byte-compiled / optimized / DLL files
+# =============================================================================
+# ADTC 2026 + Coffee Leaf Disease Detector — do NOT commit these
+# =============================================================================
+
+# Model weights (download via download_model.sh / download_classifier.sh)
+model/*.gguf
+model/*.onnx
+model/*.bin
+model/*.safetensors
+model/*.pt
+model/*.pth
+!model/.gitkeep
+
+# Profiler output (local benchmarks only)
+submission.json
+submission_constrained.json
+audit.json
+profiler_artifacts/
+
+# App runtime / user data
+app/users.db
+app/users.json
+app/classified_images/
+
+# Legacy paths at repo root
+classified_images/
+users.db
+users.json
+coffee_model.onnx
+*.onnx
+*.gguf
+
+# Uploaded test images (keep team photos in static/)
+*.jpg
+*.jpeg
+!app/static/**/*.jpg
+!app/static/**/*.jpeg
+!app/static/**/*.avif
+
+# IDE
+.vscode/
+.idea/
+
+# =============================================================================
+# Python (standard)
+# =============================================================================
+
 __pycache__/
 *.py[cod]
 *$py.class
