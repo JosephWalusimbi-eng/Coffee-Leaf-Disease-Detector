@@ -13,11 +13,11 @@ Technical report for the [Africa Deep Tech Challenge 2026](https://adtc-2026.dev
 | Model | Format | Role | Runtime |
 |-------|--------|------|---------|
 | **Coffee leaf CNN** | ONNX (`coffee_model.onnx`) | Classify leaf images into 3 classes | ONNX Runtime |
-| **Advisory LLM** | GGUF (`SmolLM2-360M-Instruct-Q4_K_M.gguf`) | Answer agriculture prompts (ADTC evaluation) | llama.cpp |
+| **Advisory LLM** | GGUF (`SmolLM2-360M-Instruct-Q4_K_M.gguf`) | English advisories, farmer chatbot, ADTC evaluation | llama.cpp |
 
 **You cannot convert the ONNX classifier to GGUF.** GGUF + `llama.cpp` are for **language models** (text in → text out). Your classifier is a **CNN** (image in → 3 class scores). Different architecture, different runtime.
 
-This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farmer advice). ADTC's [profiler](https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler) benchmarks the **GGUF LLM**; the Flask app uses **ONNX** for actual leaf photos.
+This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farmer advice). ADTC's [profiler](https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler) benchmarks the **GGUF LLM**; the Flask app uses **ONNX** for leaf photos and **llama-cpp-python** for live advisories and chat.
 
 ### Downloads
 
@@ -32,7 +32,7 @@ This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farme
 
 Coffee farmers in Uganda and East Africa lose yield when foliar diseases—especially **coffee leaf rust** and **Phoma**—spread before farmers recognize symptoms. Expert diagnosis is scarce in rural areas. Cloud LLMs are impractical due to API cost, unreliable connectivity, and power constraints—the same barriers described in the [ADTC 2026 challenge](https://adtc-2026.devpost.com/).
 
-This system gives farmers and extension workers an **offline-capable** tool to photograph a leaf, classify disease type, and read actionable countermeasures in **English or Kiswahili** on an **8 GB commodity laptop**.
+This system gives farmers and extension workers an **offline-capable** tool to photograph a leaf, classify disease type, receive **AI-generated advisories**, and ask follow-up questions through an **on-device chatbot** — all in **English or Kiswahili** on an **8 GB commodity laptop**.
 
 **Target users:** Smallholder coffee farmers, agricultural students, and field extension agents in Uganda and East Africa.
 
@@ -46,8 +46,9 @@ This system gives farmers and extension workers an **offline-capable** tool to p
 | **Three classes** | healthy leaves, Leaf rust, Phoma — aligned with local farmer needs |
 | **224×224 RGB input** | Standard CNN input; resize + normalize in OpenCV |
 | **ONNX Runtime** | Cross-platform, no GPU required, runs fully offline |
-| **Flask web UI** | Familiar browser workflow; upload or webcam capture |
-| **Locale JSON files** | `locales/en.json`, `locales/sw.json` — no cloud translation |
+| **Flask web UI** | Familiar browser workflow; upload, webcam, chat panel |
+| **GGUF + llama-cpp-python** | On-device English advisories and farmer chatbot |
+| **Locale JSON files** | `locales/en.json`, `locales/sw.json` — UI + verified Kiswahili advisories |
 | **Local CSS** | `app/static/css/app.css` — no CDN dependency |
 | **Model in `model/`** | Matches ADTC download pattern; weights excluded from git |
 
@@ -65,9 +66,25 @@ This system gives farmers and extension workers an **offline-capable** tool to p
 | **Power** | Low sustained CPU; no GPU draw |
 | **Data** | Local image storage; no farmer data uploaded to cloud |
 | **African context** | Ugandan coffee diseases; Kiswahili UI; Soroti University team |
-| **Low technical literacy** | Simple upload/capture + one-button classification |
+| **Low technical literacy** | Simple upload/capture, one-button classification, chat panel |
 
-### ADTC Standard Laptop (evaluation target)
+### Participant laptop (development, profiling, and demos)
+
+All local development, host profiler runs, and demo recordings were performed on:
+
+| Component | Specification |
+|-----------|---------------|
+| **Model** | HP EliteBook |
+| **CPU** | Intel Core i5, 2.20 GHz |
+| **RAM** | 8 GB |
+| **Storage** | 500 GB |
+| **Graphics** | Integrated (no discrete GPU) |
+
+This machine matches the ADTC **8 GB RAM** budget. Profiler host runs report `measured_on: participant_laptop` on this hardware.
+
+### ADTC Standard Laptop (official challenge evaluation target)
+
+Judges benchmark against this reference profile (our participant laptop aligns on RAM and integrated graphics):
 
 | Component | Specification |
 |-----------|---------------|
@@ -85,15 +102,17 @@ This system gives farmers and extension workers an **offline-capable** tool to p
 |------|------------|
 | **Flask** | Lightweight local web server for farmer UI |
 | **ONNX Runtime** | Fast CPU inference for image CNN |
-| **llama.cpp / GGUF** | ADTC-required format for on-device LLM advisories |
+| **llama-cpp-python** | Live GGUF inference for English advisories and chatbot |
 | **OpenCV + Pillow** | Image resize/normalize for classifier |
 | **SQLite** | Local user accounts without cloud |
-| **Locale JSON** | Offline English/Kiswahili without translation APIs |
+| **Locale JSON** | Offline UI + curated Kiswahili disease advisories |
 | **adtc-profiler** | Pre-submission benchmark against ADTC pipeline |
 
 ---
 
-## 5. Benchmarks (development machine)
+## 5. Benchmarks (HP EliteBook participant laptop)
+
+Profiler runs and app testing used an **HP EliteBook** — Intel Core i5 @ 2.20 GHz, **8 GB RAM**, **500 GB** storage, integrated graphics.
 
 ### ONNX classifier (leaf images)
 
@@ -109,7 +128,7 @@ This system gives farmers and extension workers an **offline-capable** tool to p
 
 Benchmarked with [adtc-profiler](https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler) v0.1.0 in **participant mode** (`--skip-accuracy`).
 
-**Does more system RAM change the score?** No — ADTC scores **peak process memory (RSS)** during inference, not total installed RAM. A 360M Q4_K_M model uses ~375–394 MB whether the laptop has 8 GB or 19.9 GB. Your first run already proved the model fits the 7 GB budget.
+**Does more system RAM change the score?** No — ADTC scores **peak process memory (RSS)** during inference, not total installed RAM. A 360M Q4_K_M model uses ~375–394 MB peak RSS on our 8 GB HP EliteBook, well within the 7 GB budget.
 
 **Constrained re-run (recommended):** Docker with `--memory=7.5g` enforces the ADTC RAM cap (OOM if the model exceeds it), uses CPU-only `llama.cpp` built without AVX (parity with commodity laptops), and runs on Linux inside the container.
 
@@ -134,10 +153,11 @@ Reports: [`submission_constrained.json`](submission_constrained.json) (constrain
 
 | Environment field | Value |
 |-------------------|-------|
-| CPU | Intel Core i5-8350U @ 1.70 GHz (host CPU via Docker) |
+| Host machine | HP EliteBook — Intel Core i5 @ 2.20 GHz, 8 GB RAM, 500 GB storage |
+| CPU (profiler report) | Intel Core i5-8350U @ 1.70 GHz (base clock reported by adtc-profiler / Docker host) |
 | RAM reported | 9.7 GB (Docker Desktop VM; **limit still enforced at 7.5 GB**) |
 | OS | Debian GNU/Linux 13 (profiler image; reference audit OS: Ubuntu 22.04) |
-| GPU | none |
+| GPU | none (integrated) |
 
 | Component | Formula | Constrained run |
 |-----------|---------|-----------------|
@@ -145,12 +165,13 @@ Reports: [`submission_constrained.json`](submission_constrained.json) (constrain
 | S_eff | `(7 − peak_gb) ÷ 7 × 100` | **~94.6** (0.37 GB peak) |
 | P_thermal | −10 if throttled / >85°C | **0** |
 
-#### Host run — 21 June 2026 (Windows, 19.9 GB RAM — optional smoke test)
+#### Host run — 21 June 2026 (HP EliteBook, Windows — optional smoke test)
 
 | Metric | Value |
 |--------|-------|
 | TPS | 17.44 (optimized win-cpu `llama-bench` with AVX) |
 | Peak RSS | 394 MB |
+| Host machine | HP EliteBook — Intel Core i5 @ 2.20 GHz, 8 GB RAM, 500 GB storage |
 | OS | Windows 11 |
 
 > **Why TPS differs:** The host run used optimized Windows binaries (AVX). The constrained Docker image builds `llama.cpp` with `GGML_AVX=OFF` to match low-end commodity laptops — throughput is lower but more representative of ADTC audit conditions. **Peak RAM is nearly identical** (~375 vs 394 MB), which is what matters for the 8 GB constraint.
@@ -178,6 +199,9 @@ Reports: [`submission_constrained.json`](submission_constrained.json) (constrain
 │   ├── SmolLM2-360M-Instruct-Q4_K_M.gguf
 │   └── coffee_model.onnx
 └── app/                       # Flask web application
+    ├── onnx_server.py
+    ├── llm_advisor.py         # GGUF advisories + chatbot
+    └── ...
 ```
 
 ---
@@ -186,32 +210,34 @@ Reports: [`submission_constrained.json`](submission_constrained.json) (constrain
 
 **Required by organizers:**
 
-- [ ] Screenshots — login, classification result, Kiswahili UI, countermeasures  
+- [ ] Screenshots — login, classification, **chatbot**, Kiswahili UI, AI advisory  
 - [ ] **Video (max 2 minutes)** — problem, demo, development journey  
 - [ ] Upload to DevPost with public GitHub URL  
 
 Suggested video outline:
 
 1. Problem — coffee diseases in Uganda (15 s)  
-2. Demo — upload leaf → classification → advisory in English/Kiswahili (60 s)  
-3. Technical — offline, 8 GB laptop, dual model (30 s)  
+2. Demo — upload leaf → classification → **AI advisory** → **chatbot follow-up** in English/Kiswahili (60 s)  
+3. Technical — offline on HP EliteBook (8 GB RAM), dual model + chatbot (30 s)  
 4. Team + Soroti University (15 s)  
 
 ---
 
 ## 8. Offline verification
 
-After `pip install` and `download_model.sh`:
+After `pip install` and model downloads:
 
-- No CDN or external API calls during classification
+- No CDN or external API calls during classification, advisories, or chat
 - Language switching uses local JSON dictionaries
 - Styles served from `app/static/css/app.css`
+- GGUF loaded on first advisory or chat request (then stays in memory)
 
 ---
 
 ## 9. Full system documentation
 
-See `app/SYSTEM_REPORT.md` for architecture, API, and PC specifications.
+See `app/SYSTEM_REPORT.md` for architecture, APIs, chatbot, and PC specifications.  
+See `TECHNICAL_REFERENCE.md` for Q&A preparation.
 
 ---
 

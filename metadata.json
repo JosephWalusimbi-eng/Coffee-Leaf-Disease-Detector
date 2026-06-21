@@ -12,7 +12,7 @@
   "cross_disciplinary_pairing": {
     "discipline": "agriculture",
     "load_bearing": true,
-    "description": "Hybrid offline agriculture assistant: ONNX CNN classifies coffee leaf images (healthy, Leaf rust, Phoma); GGUF LLM provides bilingual farmer advisories on the same 8 GB laptop without cloud APIs."
+    "description": "Hybrid offline agriculture assistant: ONNX CNN classifies coffee leaf images (healthy, Leaf rust, Phoma); GGUF LLM powers English advisories and an offline farmer chatbot; curated Kiswahili content on the same 8 GB laptop without cloud APIs."
   },
   "test_prompts": [
     {

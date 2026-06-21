@@ -10,10 +10,16 @@ from flask import Flask, jsonify, redirect, render_template, request, session, u
 from flask_cors import CORS
 from i18n import (
     class_key_from_model_label,
-    get_advisory,
     get_class_label,
     get_strings,
     normalize_lang,
+)
+from llm_advisor import (
+    generate_advisory,
+    generate_chat_reply,
+    llm_status,
+    localize_chat_history,
+    store_chat_message,
 )
 from PIL import Image
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -56,6 +62,7 @@ def inject_i18n():
         "brand_name": BRAND_NAME,
         "brand_full": BRAND_FULL,
         "footer_text": FOOTER_TEXT,
+        "auth_locales": {"en": get_strings("en"), "sw": get_strings("sw")},
     }
 
 
@@ -79,6 +86,11 @@ def init_db():
 @app.route("/set-language/<lang>")
 def set_language(lang):
     set_lang(lang)
+    history = session.get("chat_history")
+    if history:
+        localize_chat_history(history, get_lang())
+        session["chat_history"] = history
+        session.modified = True
     next_url = request.args.get("next")
     if not next_url or not next_url.startswith("/"):
         next_url = url_for("login_page")
@@ -218,7 +230,12 @@ def predict():
         model_label = MODEL_CLASSES[prediction]
         class_key = class_key_from_model_label(model_label)
         translated_class = get_class_label(class_key, lang)
-        advisory = get_advisory(class_key, lang)
+
+        session["last_classification"] = {
+            "class_key": class_key,
+            "class": translated_class,
+            "confidence": float(confidence),
+        }
 
         class_dir = os.path.join(save_dir, model_label.replace(" ", "_"))
         os.makedirs(class_dir, exist_ok=True)
@@ -230,13 +247,93 @@ def predict():
             "class_key": class_key,
             "class": translated_class,
             "confidence": float(confidence),
-            "advisory": advisory,
             "saved_path": classified_path,
+            "llm_available": llm_status()["available"],
         })
 
     except Exception as e:
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/llm-status")
+def api_llm_status():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    return jsonify(llm_status())
+
+
+@app.route("/api/advisory", methods=["POST"])
+def api_advisory():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    lang = get_lang()
+    t = get_strings(lang)
+    data = request.get_json(silent=True) or {}
+
+    last = session.get("last_classification") or {}
+    class_key = data.get("class_key") or last.get("class_key")
+    confidence = data.get("confidence", last.get("confidence"))
+
+    if not class_key or confidence is None:
+        return jsonify({"error": t["error_no_classification"]}), 400
+
+    advisory_html, source = generate_advisory(class_key, float(confidence), lang)
+    return jsonify({
+        "advisory": advisory_html,
+        "source": source,
+        "class_key": class_key,
+    })
+
+
+@app.route("/api/chat", methods=["POST"])
+def api_chat():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    lang = get_lang()
+    t = get_strings(lang)
+    data = request.get_json(silent=True) or {}
+    message = (data.get("message") or "").strip()
+
+    if not message:
+        return jsonify({"error": t["error_empty_message"]}), 400
+
+    history = session.get("chat_history") or []
+    reply, source = generate_chat_reply(
+        message,
+        lang,
+        history,
+        session.get("last_classification"),
+    )
+
+    store_chat_message(history, "user", message, lang)
+    store_chat_message(history, "assistant", reply, lang)
+    session["chat_history"] = history[-20:]
+
+    return jsonify({"reply": reply, "source": source})
+
+
+@app.route("/api/chat/history", methods=["GET"])
+def api_chat_history():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    lang = get_lang()
+    history = session.get("chat_history") or []
+    messages = localize_chat_history(history, lang)
+    session["chat_history"] = history
+    session.modified = True
+    return jsonify({"messages": messages})
+
+
+@app.route("/api/chat/clear", methods=["POST"])
+def api_chat_clear():
+    if "user" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    session.pop("chat_history", None)
+    return jsonify({"ok": True})
 
 
 if __name__ == "__main__":

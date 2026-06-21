@@ -1,6 +1,6 @@
 # System Report — AI-Based Coffee Leaf Disease Detector and Advisory System
 
-**Document version:** 2.0  
+**Document version:** 3.0  
 **Date:** June 2026  
 **Project folder:** `Coffee Leaf Disease Detector` (repo root)  
 **Application:** `app/`  
@@ -10,13 +10,18 @@
 
 ## 1. Executive Summary
 
-This system is a **local, offline-capable web application** that helps coffee farmers and agricultural workers **detect and classify coffee leaf diseases** from photographs. Users upload or capture an image of a coffee leaf; a trained **deep learning model** (exported as ONNX) predicts whether the leaf is **healthy**, affected by **Leaf Rust**, or affected by **Phoma**. The application displays the prediction confidence and **advisory countermeasures** in the user's chosen language.
+This system is a **local, offline-capable web application** that helps coffee farmers and agricultural workers **detect and classify coffee leaf diseases** from photographs, receive **AI-generated farmer advisories**, and ask follow-up questions through an **on-device agriculture chatbot**.
 
-The solution runs on a **personal computer** using a **Flask** backend, **ONNX Runtime** for inference, and a **browser-based** interface. After initial Python package installation, the system operates **without internet**: translations, styles, model, and images are all stored locally.
+Users upload or capture an image of a coffee leaf; a trained **deep learning model** (exported as ONNX) predicts whether the leaf is **healthy**, affected by **Leaf Rust**, or affected by **Phoma**. The app then offers **Get AI Advisory** (GGUF LLM in English; curated Kiswahili text) and **Ask CoffeeVision** — a chat panel for ongoing questions about diseases, treatment, and farming.
 
-**Key capabilities (v2.0):**
+The solution runs on a **personal computer** using **Flask**, **ONNX Runtime** for image inference, **llama-cpp-python** for the language model, and a **browser-based** interface. After initial setup, the system operates **without internet**: models, translations, styles, and chat all run locally.
 
-- Bilingual UI and advisories: **English** and **Kiswahili**
+**Key capabilities (v3.0):**
+
+- **Three-class leaf classification** with confidence scoring (ONNX)
+- **AI farmer advisories** after classification (GGUF LLM + Kiswahili locales)
+- **Offline agriculture chatbot** with session history (GGUF + curated Kiswahili fallbacks)
+- Bilingual UI: **English** and **Kiswahili**
 - Language selection at login; switch anytime while logged in
 - Team, About, and Contact informational pages
 - Fully local styling (no CDN dependencies)
@@ -35,10 +40,12 @@ Coffee production in Uganda and similar regions is threatened by foliar diseases
 - **English / Kiswahili** interface and disease advisories
 - Image upload and webcam capture
 - Three-class leaf classification with confidence scoring
-- Disease advisory text (symptoms and countermeasures) in selected language
+- **AI-generated advisories** after classification (`/api/advisory`)
+- **Offline farmer chatbot** for follow-up Q&A (`/api/chat`, `/api/chat/clear`)
+- Disease advisory text in selected language (LLM + curated locales)
 - Informational pages: **Home**, **About Us**, **Team**, **Contact Us**
 - Local storage of uploaded and classified images
-- REST API for prediction (`POST /predict`)
+- REST APIs: `POST /predict`, `/api/advisory`, `/api/chat`, `/api/llm-status`
 - **Offline operation** after setup (no runtime internet required)
 
 ### 2.3 Out of Scope (Current Version)
@@ -58,32 +65,34 @@ Coffee production in Uganda and similar regions is threatened by foliar diseases
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     User (Web Browser)                          │
-│  HTML, JavaScript, local CSS (static/css/app.css)               │
+│  Classifier panel + Ask CoffeeVision chatbot (test.html)        │
 └────────────────────────────┬────────────────────────────────────┘
-                             │ HTTP (port 5000, localhost / LAN)
+                             │ HTTP (port 5000)
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │              Flask Web Server (onnx_server.py)                  │
 │  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
-│  │ Auth + i18n  │  │ Page routes  │  │ POST /predict API      │ │
-│  │ session[lang]│  │ home, about  │  │ image → classify       │ │
-│  └──────┬───────┘  │ team, contact│  └───────────┬────────────┘ │
-│         │          └──────────────┘              │             │
-│         ▼                                        ▼             │
-│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
-│  │ SQLite       │  │ i18n.py      │  │ Image pipeline         │ │
-│  │ users.db     │  │ locales/*.json│  │ PIL → OpenCV → NumPy  │ │
-│  └──────────────┘  └──────────────┘  └───────────┬────────────┘ │
+│  │ Auth + i18n  │  │ Page routes  │  │ POST /predict          │ │
+│  └──────┬───────┘  └──────────────┘  │ /api/advisory          │ │
+│         │                            │ /api/chat              │ │
+│         ▼                            └───────────┬────────────┘ │
+│  ┌──────────────┐  ┌──────────────┐              │             │
+│  │ SQLite       │  │ i18n.py      │              ▼             │
+│  │ users.db     │  │ locales/*.json│  ┌────────────────────────┐ │
+│  └──────────────┘  └──────────────┘  │ Image → ONNX Runtime   │ │
+│                                        │ coffee_model.onnx      │ │
+│                                        └────────────────────────┘ │
 │                                                    │             │
 │                                                    ▼             │
-│                                    ┌────────────────────────┐   │
-│                                    │ ONNX Runtime           │   │
-│                                    │ coffee_model.onnx      │   │
-│                                    └────────────────────────┘   │
+│                              ┌─────────────────────────────────┐ │
+│                              │ llm_advisor.py                  │ │
+│                              │ SmolLM2-360M GGUF (llama.cpp)   │ │
+│                              │ advisories + chatbot            │ │
+│                              └─────────────────────────────────┘ │
 └────────────────────────────┬────────────────────────────────────┘
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  classified_images/, static/, templates/, locales/              │
+│  model/*.onnx, model/*.gguf, classified_images/, locales/       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,7 +106,9 @@ Coffee production in Uganda and similar regions is threatened by foliar diseases
 | **Web framework** | Flask 3.x | HTTP server, routing, sessions |
 | **CORS** | flask-cors | Cross-origin API access |
 | **Internationalization** | `i18n.py` + `locales/*.json` | English/Kiswahili dictionaries |
-| **ML inference** | ONNX Runtime 1.16+ | Load and run `coffee_model.onnx` |
+| **ML inference (vision)** | ONNX Runtime 1.16+ | Load and run `coffee_model.onnx` |
+| **ML inference (language)** | llama-cpp-python | GGUF advisories and chatbot |
+| **LLM module** | `llm_advisor.py` | Prompting, fallbacks, Kiswahili routing |
 | **Image processing** | OpenCV, Pillow, NumPy | Resize, normalize, save images |
 | **Database** | SQLite (`users.db`) | User accounts |
 | **Frontend** | HTML5, JavaScript, local CSS | UI and client logic |
@@ -113,22 +124,23 @@ opencv-python>=4.8.0
 numpy>=1.24.0
 onnxruntime>=1.16.0
 pillow>=10.0.0
+llama-cpp-python>=0.2.90
 ```
 
 ### 4.2 Project Structure
 
 ```
-Coffee Leaf Disease Detector/          # Repo root (ADTC layout)
+Coffee Leaf Disease Detector/          # Repo root
 ├── metadata.json
-├── download_model.sh
-├── REPORT.md
 ├── model/
-│   └── coffee_model.onnx
-└── app/
+│   ├── coffee_model.onnx
+│   └── SmolLM2-360M-Instruct-Q4_K_M.gguf
+└── app/                               # Run server from here
     ├── onnx_server.py
+    ├── llm_advisor.py
     ├── i18n.py
     ├── locales/
-    ├── templates/
+    ├── templates/                     # test.html = classifier + chatbot
     ├── static/
     ├── requirements.txt
     └── howtorun.md
@@ -140,12 +152,13 @@ Coffee Leaf Disease Detector/          # Repo root (ADTC layout)
 
 ### 5.1 Startup Sequence
 
-1. Run `python onnx_server.py` from the **`Coffee Leaf Disease Detector`** folder (project root).
-2. Flask loads `coffee_model.onnx` into an ONNX Runtime `InferenceSession`.
-3. `init_db()` creates `users.db` if missing.
-4. Server listens on `0.0.0.0:5000`.
+1. Run `python onnx_server.py` from the **`app/`** folder.
+2. Flask loads `../model/coffee_model.onnx` into an ONNX Runtime `InferenceSession`.
+3. GGUF model loads lazily on first advisory or chat request (`llm_advisor.py`).
+4. `init_db()` creates `users.db` if missing.
+5. Server listens on `0.0.0.0:5000`.
 
-**Critical:** Relative paths (`coffee_model.onnx`, `users.db`, `locales/`, `classified_images/`) resolve from the **current working directory**. Always start the server from the project root.
+**Critical:** Run from **`app/`** so paths resolve correctly. Models live in `../model/`.
 
 ### 5.2 Authentication Flow
 
@@ -208,28 +221,58 @@ ONNX Runtime inference → 3-class output vector
 argmax (class index) + max (confidence)
         │
         ▼
-Map to class_key → translate label + advisory from locales/
+Map to class_key → translate label; store session[last_classification]
         │
         ▼
 Save copy to classified_images/<class>/<class>_<timestamp>.jpg
         │
         ▼
-JSON: { class_key, class, confidence, advisory, saved_path }
+JSON: { class_key, class, confidence, saved_path, llm_available }
         │
         ▼
 Browser shows translated class + confidence %
         │
         ▼
-"View Countermeasures" displays server-provided advisory HTML
+User clicks "Get AI Advisory" → POST /api/advisory → GGUF or curated text
+        │
+        ▼
+User asks questions in chat panel → POST /api/chat (session history, up to 20 msgs)
 ```
 
 ### 5.5 Webcam Capture
 
 The Home page uses `navigator.mediaDevices.getUserMedia()`. After ~2 seconds, a frame is captured to a `<canvas>` and used for classification. Requires camera permission in the browser.
 
-### 5.6 Advisory System
+### 5.6 AI Advisory System (`/api/advisory`)
 
-Countermeasures are **not generated by the ML model**. They are **pre-written HTML** in `locales/en.json` and `locales/sw.json` under `advisories`, returned by `/predict` based on `session["lang"]`:
+After classification, the user clicks **Get AI Advisory** / **Pata Ushauri wa AI**.
+
+| Language | Source | Behaviour |
+|----------|--------|-----------|
+| **English** | GGUF LLM (`llm_advisor.generate_advisory`) | Dynamic advisory from classification result |
+| **Kiswahili** | Curated `locales/sw.json` | Verified farmer text (360M model unreliable in Kiswahili) |
+| **Fallback** | `locales/*.json` | If GGUF missing or LLM errors |
+
+Response includes `source`: `llm`, `curated`, or `static`.
+
+### 5.7 Offline Chatbot (`/api/chat`)
+
+The **Ask CoffeeVision** panel on the home page provides a farmer chatbot:
+
+| Feature | Detail |
+|---------|--------|
+| Endpoint | `POST /api/chat` with `{ "message": "..." }` |
+| History | Up to 20 messages in `session['chat_history']`; last 8 used as LLM context |
+| Clear | `POST /api/chat/clear` resets history |
+| Classification context | Last scan injected into English LLM system prompt |
+| **English** | GGUF generates replies (~150 words max) |
+| **Kiswahili** | Disease-keyword messages → curated advisories; general queries → LLM with quality fallback |
+
+Chat and advisories share the same GGUF file; first request loads the model (~10–30 s on CPU).
+
+### 5.8 Curated locale advisories
+
+Pre-written HTML in `locales/en.json` and `locales/sw.json` under `advisories`:
 
 | Class key | English label | Kiswahili label (example) |
 |-----------|---------------|---------------------------|
@@ -245,8 +288,8 @@ Countermeasures are **not generated by the ML model**. They are **pre-written HT
 
 | Property | Value |
 |----------|-------|
-| **File** | `coffee_model.onnx` |
-| **Location** | Project root (same folder as `onnx_server.py`) |
+| **File** | `../model/coffee_model.onnx` (from `app/`) |
+| **Location** | `model/` at repo root |
 | **Size** | ~28.6 MB |
 | **Format** | ONNX |
 | **Runtime** | ONNX Runtime (CPU by default) |
@@ -279,7 +322,7 @@ Sample tests showed high confidence on known images (e.g. ~99% Leaf rust, ~100% 
 
 | Route | Method | Auth | Description |
 |-------|--------|------|-------------|
-| `/` | GET | Yes | Home — image upload, capture, classification |
+| `/` | GET | Yes | Home — classifier + **Ask CoffeeVision** chatbot |
 | `/login` | GET, POST | No | Login with language selection |
 | `/register` | GET, POST | No | Account creation with language selection |
 | `/about` | GET | Yes | Project overview |
@@ -288,6 +331,10 @@ Sample tests showed high confidence on known images (e.g. ~99% Leaf rust, ~100% 
 | `/logout` | GET | Yes | End session |
 | `/set-language/<lang>` | GET | No | Set `en` or `sw`; redirect to `next` URL |
 | `/predict` | POST | **No** | Image classification API |
+| `/api/llm-status` | GET | Yes | GGUF / llama-cpp availability |
+| `/api/advisory` | POST | Yes | AI farmer advisory (JSON body optional) |
+| `/api/chat` | POST | Yes | Chatbot message |
+| `/api/chat/clear` | POST | Yes | Clear chat history |
 
 ### 7.1 Login Page
 
@@ -345,7 +392,7 @@ Human-editable JSON dictionaries for translators. Edit `sw.json` to update Kiswa
 
 **Request:** `multipart/form-data` with field `file` (image).
 
-Uses `session["lang"]` for translated output. Defaults to English if no session.
+Uses `session["lang"]` for translated class label. Does **not** return advisory text (use `/api/advisory`).
 
 **Success response (200):**
 
@@ -354,10 +401,30 @@ Uses `session["lang"]` for translated output. Defaults to English if no session.
   "class_key": "leaf_rust",
   "class": "Ukungu wa Majani (Leaf Rust)",
   "confidence": 0.9999,
-  "advisory": "<b>☕ Ukungu wa Majani Umetambuliwa!</b><br>...",
-  "saved_path": "classified_images/Leaf_rust/Leaf_rust_1710000000.jpg"
+  "saved_path": "classified_images/Leaf_rust/Leaf_rust_1710000000.jpg",
+  "llm_available": true
 }
 ```
+
+### `POST /api/advisory` (auth required)
+
+**Body (optional):** `{ "class_key": "leaf_rust", "confidence": 0.99 }` — defaults to `session['last_classification']`.
+
+**Response:** `{ "advisory": "<html>", "source": "llm|curated|static", "class_key": "..." }`
+
+### `POST /api/chat` (auth required)
+
+**Body:** `{ "message": "How do I treat leaf rust?" }`
+
+**Response:** `{ "reply": "...", "source": "llm|static" }`
+
+### `GET /api/llm-status` (auth required)
+
+Returns `{ "available": true, "model": "SmolLM2-360M-Instruct-Q4_K_M.gguf" }` or error reason.
+
+### `POST /api/chat/clear` (auth required)
+
+Clears `session['chat_history']`. Returns `{ "ok": true }`.
 
 **Error responses:**
 
@@ -383,10 +450,11 @@ Uses `session["lang"]` for translated output. Defaults to English if no session.
 |-----------|----------|----------|
 | Web UI text | Yes | `locales/en.json`, `locales/sw.json` |
 | Language switching | Yes | Flask session + local JSON |
-| Inference labels & advisories | Yes | `locales/*.json` |
+| Inference labels & advisories | Yes | `locales/*.json` + GGUF |
+| Chatbot | Yes | `llm_advisor.py` + GGUF |
 | Styles / layout | Yes | `static/css/app.css` |
 | Images & backgrounds | Yes | `static/images/` |
-| ML model | Yes | `coffee_model.onnx` |
+| ML models | Yes | `model/coffee_model.onnx`, `model/*.gguf` |
 | User accounts | Yes | `users.db` |
 
 **Internet required only for:** initial `pip install -r requirements.txt`.
@@ -410,17 +478,20 @@ The application does **not** use external CDNs, cloud APIs, or online translatio
 
 Inference: ~1–3 seconds per image.
 
-### 11.2 Recommended Requirements
+### 11.2 Recommended Requirements (participant laptop)
+
+Validated on the team's **HP EliteBook** used for development and ADTC profiler runs:
 
 | Component | Specification |
 |-----------|---------------|
+| **Model** | HP EliteBook |
 | **OS** | Windows 10/11 64-bit |
-| **CPU** | Quad-core 2.0 GHz+ (Intel i5 / Ryzen 5) |
+| **CPU** | Intel Core i5, 2.20 GHz |
 | **RAM** | 8 GB |
-| **Storage** | 5 GB free on SSD |
+| **Storage** | 500 GB (≥ 5 GB free for models and dependencies) |
 | **Browser** | Chrome or Edge (latest) |
 
-Model load: ~2–5 s at startup; inference typically **under 1 second** on CPU.
+Model load: ~2–5 s ONNX at startup; GGUF ~10–30 s on first advisory/chat; inference typically **under 1 second** per image on CPU.
 
 ### 11.3 Optimal / Lab Station
 
@@ -471,13 +542,16 @@ See `howtorun.md` for detailed setup and troubleshooting.
 
 ## 14. Limitations and Known Issues
 
-1. **Working directory** — Server must run from project root folder.
+1. **Working directory** — Server must run from **`app/`** folder.
 2. **Three classes only** — No other diseases or non-leaf rejection class in the model.
 3. **Confidence score** — Raw model output max value; not necessarily calibrated probability.
 4. **LAN exposure** — `0.0.0.0:5000` reachable on local network; configure firewall if needed.
 5. **Image quality** — Blurry, shaded, or multi-leaf photos may reduce accuracy.
 6. **Two languages only** — English and Kiswahili; additional languages require new locale JSON files.
 7. **Contact page** — Static email/phone only; no in-app message sending.
+8. **Chat history** — Stored in Flask session (single browser session; not a shared database).
+9. **Kiswahili LLM** — Chat and advisories use curated locale text where the small model is unreliable.
+10. **English LLM** — May occasionally hallucinate fungicide names; farmers should verify with extension officers.
 
 ---
 
@@ -485,6 +559,8 @@ See `howtorun.md` for detailed setup and troubleshooting.
 
 - GPU inference (`onnxruntime-gpu`)
 - Additional languages (new `locales/*.json` files)
+- Fine-tune SmolLM2 on agriculture Q&A (improve chatbot accuracy)
+- Kiswahili fine-tune or dedicated Swahili small model
 - Model versioning and retraining pipeline
 - User email on registration
 - Classification history export (CSV/PDF)
@@ -509,6 +585,7 @@ See `howtorun.md` for detailed setup and troubleshooting.
 |---------|------|---------|
 | 1.0 | June 2026 | Initial system report |
 | 2.0 | June 2026 | Bilingual EN/SW support, offline locales & CSS, Team page, updated API, full offline operation, project structure |
+| 3.0 | June 2026 | GGUF integration: AI advisories, offline farmer chatbot, `llm_advisor.py`, LLM API routes, hybrid Kiswahili strategy |
 
 ---
 

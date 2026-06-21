@@ -61,7 +61,7 @@ if ($Constrained) {
     exit 0
 }
 
-# --- Host run (development machine) ---
+# --- Host run (HP EliteBook participant laptop) ---
 $OutFile = Join-Path $Root "submission.json"
 
 chcp 65001 | Out-Null

@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="{{ lang }}">
 <head>
-  <title>{{ brand_full }}</title>
+  <title id="i18n-page-title">{{ t.app_title }}</title>
   {% include '_head.html' %}
 </head>
 <body class="auth-page">
   <div class="mb-4">{% include '_lang_switcher.html' %}</div>
 
   <div class="text-center mb-8 max-w-3xl">
-    <h1 class="auth-heading">{{ t.app_title }}</h1>
-    <p class="auth-subtitle">{{ t.app_subtitle }}</p>
+    <h1 class="auth-heading" data-i18n="app_title">{{ t.app_title }}</h1>
+    <p class="auth-subtitle" data-i18n="app_subtitle">{{ t.app_subtitle }}</p>
   </div>
 
   <div class="card max-w-md">
-    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">{{ t.login }}</h2>
+    <h2 class="text-2xl font-bold text-center mb-6 text-gray-800" data-i18n="login">{{ t.login }}</h2>
 
     {% if error %}
     <p class="text-red-500 text-center mb-3">{{ error }}</p>
@@ -21,29 +21,32 @@
 
     <form action="{{ url_for('login_page') }}" method="POST" class="space-y-4">
       <div>
-        <label class="text-gray-700 font-medium mb-2">{{ t.language }}</label>
+        <label class="text-gray-700 font-medium mb-2" data-i18n="language">{{ t.language }}</label>
         <select name="lang">
           <option value="en" {% if lang == 'en' %}selected{% endif %}>{{ t.lang_en }}</option>
           <option value="sw" {% if lang == 'sw' %}selected{% endif %}>{{ t.lang_sw }}</option>
         </select>
       </div>
       <div>
-        <label class="text-gray-700 font-medium">{{ t.username }}</label>
+        <label class="text-gray-700 font-medium" data-i18n="username">{{ t.username }}</label>
         <input type="text" name="username" required>
       </div>
       <div>
-        <label class="text-gray-700 font-medium">{{ t.password }}</label>
+        <label class="text-gray-700 font-medium" data-i18n="password">{{ t.password }}</label>
         <input type="password" name="password" required>
       </div>
-      <button type="submit" class="btn btn-blue btn-block">{{ t.login }}</button>
+      <button type="submit" class="btn btn-blue btn-block" data-i18n="login">{{ t.login }}</button>
     </form>
 
     <p class="mt-4 text-center text-gray-600">
-      {{ t.no_account }}
-      <a href="{{ url_for('register') }}" class="text-green-600 underline font-medium">{{ t.create_one }}</a>
+      <span data-i18n="no_account">{{ t.no_account }}</span>
+      <a href="{{ url_for('register') }}" class="text-green-600 underline font-medium" data-i18n="create_one">{{ t.create_one }}</a>
     </p>
   </div>
 
   <footer class="auth-footer">{{ footer_text }}</footer>
+
+  <script>window.AUTH_LOCALES = {{ auth_locales | tojson }};</script>
+  <script src="{{ url_for('static', filename='js/auth-i18n.js') }}"></script>
 </body>
 </html>

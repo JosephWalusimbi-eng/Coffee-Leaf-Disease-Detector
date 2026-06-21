@@ -7,36 +7,92 @@
 <body class="min-h-screen flex flex-col page-with-bg">
   {% include '_navbar.html' %}
 
-  <div class="flex p-5 justify-center items-center flex-grow flex-col mt-16">
-    <h1 class="text-3xl font-bold text-white mb-6 text-center">{{ t.home_welcome }}</h1>
+  <div class="home-main flex-grow mt-16 p-5">
+    <h1 class="home-hero-title text-3xl font-bold mb-2 text-center">{{ t.home_welcome }}</h1>
+    <p class="home-hero-subtitle text-center mb-6 max-w-2xl mx-auto text-sm">{{ t.chat_subtitle }}</p>
 
-    <div class="card shadow-lg max-w-md text-center" style="padding: 1.5rem;">
-      <h2 class="text-2xl font-semibold mb-4">{{ t.upload_title }}</h2>
-      <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="previewImage(event)">
-      <button onclick="document.getElementById('imageInput').click()" class="btn btn-blue mb-3">{{ t.choose_image }}</button>
-      <button onclick="captureImage()" class="btn btn-green mb-3">{{ t.take_photo }}</button>
-      <video id="camera" class="hidden" autoplay></video>
-      <canvas id="canvas" class="hidden"></canvas>
-      <img id="preview" class="hidden" />
-      <button onclick="classifyImage()" id="classifyBtn" class="btn btn-purple mt-3 hidden">{{ t.classify_image }}</button>
-      <p id="result" class="mt-4 text-lg font-semibold text-gray-700"></p>
-      <button onclick="showCountermeasures()" id="counterBtn" class="btn btn-red mt-3 hidden">{{ t.view_countermeasures }}</button>
-      <p id="countermeasures" class="mt-4 text-md font-semibold text-gray-700 hidden"></p>
+    <div class="home-grid max-w-5xl mx-auto">
+      <!-- Classifier -->
+      <div class="card shadow-lg text-center home-card">
+        <h2 class="text-2xl font-semibold mb-4">{{ t.upload_title }}</h2>
+        <input type="file" id="imageInput" accept="image/*" class="hidden" onchange="previewImage(event)">
+        <button onclick="document.getElementById('imageInput').click()" class="btn btn-blue mb-3">{{ t.choose_image }}</button>
+        <button onclick="captureImage()" class="btn btn-green mb-3">{{ t.take_photo }}</button>
+        <video id="camera" class="hidden" autoplay></video>
+        <canvas id="canvas" class="hidden"></canvas>
+        <img id="preview" class="preview-img hidden" alt="Leaf preview" />
+        <button onclick="classifyImage()" id="classifyBtn" class="btn btn-purple mt-3 hidden">{{ t.classify_image }}</button>
+        <p id="result" class="mt-4 text-lg font-semibold text-gray-700"></p>
+        <button onclick="fetchAdvisory()" id="counterBtn" class="btn btn-red mt-3 hidden">{{ t.view_countermeasures }}</button>
+        <p id="advisorySource" class="mt-2 text-sm text-gray-500 hidden"></p>
+        <div id="countermeasures" class="mt-4 text-md font-semibold text-gray-700 text-left hidden"></div>
+      </div>
+
+      <!-- Chat -->
+      <div class="card shadow-lg home-card chat-panel">
+        <div class="chat-panel-header">
+          <h2 class="text-xl font-semibold text-gray-800">{{ t.chat_title }}</h2>
+          <button type="button" class="btn btn-sm btn-gray" onclick="clearChat()">{{ t.chat_clear }}</button>
+        </div>
+        <div id="chatMessages" class="chat-messages">
+          <p class="chat-hint text-gray-500">{{ t.chat_empty_hint }}</p>
+        </div>
+        <form class="chat-form" onsubmit="sendChat(event)">
+          <input type="text" id="chatInput" placeholder="{{ t.chat_placeholder }}" autocomplete="off" />
+          <button type="submit" class="btn btn-blue" id="chatSendBtn">{{ t.chat_send }}</button>
+        </form>
+      </div>
     </div>
   </div>
 
   <footer class="bg-gray-800 text-white p-4 text-center">{{ footer_text }}</footer>
 
   <script>
-    const API_URL = "{{ url_for('predict') }}";
+    const PREDICT_URL = "{{ url_for('predict') }}";
+    const ADVISORY_URL = "{{ url_for('api_advisory') }}";
+    const CHAT_URL = "{{ url_for('api_chat') }}";
+    const CHAT_HISTORY_URL = "{{ url_for('api_chat_history') }}";
+    const CHAT_CLEAR_URL = "{{ url_for('api_chat_clear') }}";
+
     const i18n = {{ {
       'classifying': t.classifying,
       'result_class': t.result_class,
       'result_confidence': t.result_confidence,
       'error_upload_leaf': t.error_upload_leaf,
-      'camera_denied': t.camera_denied
+      'camera_denied': t.camera_denied,
+      'generating_advisory': t.generating_advisory,
+      'advisory_source_llm': t.advisory_source_llm,
+      'advisory_source_curated': t.advisory_source_curated,
+      'advisory_source_static': t.advisory_source_static,
+      'chat_thinking': t.chat_thinking,
+      'chat_empty_hint': t.chat_empty_hint
     } | tojson }};
-    let detectedAdvisory = "";
+
+    function renderChatMessages(messages) {
+      const box = document.getElementById('chatMessages');
+      if (!messages || messages.length === 0) {
+        box.innerHTML = '<p class="chat-hint text-gray-500">' + i18n.chat_empty_hint + '</p>';
+        return;
+      }
+      box.innerHTML = '';
+      messages.forEach(m => appendChatBubble(m.role, m.content));
+    }
+
+    async function loadChatHistory() {
+      try {
+        const res = await fetch(CHAT_HISTORY_URL);
+        const data = await res.json();
+        if (!res.ok) return;
+        renderChatMessages(data.messages);
+      } catch (err) {
+        console.error('Failed to load chat history:', err);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadChatHistory);
+
+    let lastClassKey = null;
+    let lastConfidence = null;
 
     function previewImage(event) {
       const file = event.target.files[0];
@@ -77,8 +133,10 @@
       const imgElement = document.getElementById('preview');
       document.getElementById('result').textContent = i18n.classifying;
       document.getElementById('countermeasures').classList.add('hidden');
+      document.getElementById('advisorySource').classList.add('hidden');
       document.getElementById('counterBtn').classList.add('hidden');
-      detectedAdvisory = "";
+      lastClassKey = null;
+      lastConfidence = null;
 
       try {
         const response = await fetch(imgElement.src);
@@ -86,7 +144,7 @@
         const formData = new FormData();
         formData.append("file", blob, "image.png");
 
-        const res = await fetch(API_URL, { method: "POST", body: formData });
+        const res = await fetch(PREDICT_URL, { method: "POST", body: formData });
         const data = await res.json();
 
         if (!res.ok) {
@@ -94,26 +152,118 @@
           return;
         }
 
+        lastClassKey = data.class_key;
+        lastConfidence = data.confidence;
         const confidence = (data.confidence * 100).toFixed(2);
-        detectedAdvisory = data.advisory || "";
 
         document.getElementById('result').textContent =
           `${i18n.result_class}: ${data.class}, ${i18n.result_confidence}: ${confidence}%`;
         document.getElementById('counterBtn').classList.remove('hidden');
+        document.getElementById('counterBtn').disabled = false;
       } catch (error) {
         document.getElementById('result').textContent = i18n.error_upload_leaf;
         console.error("Classification error:", error);
       }
     }
 
-    function showCountermeasures() {
+    async function fetchAdvisory() {
       const counterDiv = document.getElementById('countermeasures');
-      if (!detectedAdvisory) {
-        counterDiv.classList.add('hidden');
-        return;
-      }
-      counterDiv.innerHTML = detectedAdvisory;
+      const sourceEl = document.getElementById('advisorySource');
+      const btn = document.getElementById('counterBtn');
+
+      btn.disabled = true;
       counterDiv.classList.remove('hidden');
+      counterDiv.textContent = i18n.generating_advisory;
+      sourceEl.classList.add('hidden');
+
+      try {
+        const res = await fetch(ADVISORY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            class_key: lastClassKey,
+            confidence: lastConfidence,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          counterDiv.textContent = data.error || i18n.error_upload_leaf;
+          return;
+        }
+        counterDiv.innerHTML = data.advisory;
+        sourceEl.textContent = data.source === "llm"
+          ? i18n.advisory_source_llm
+          : data.source === "curated"
+            ? i18n.advisory_source_curated
+            : i18n.advisory_source_static;
+        sourceEl.classList.remove('hidden');
+      } catch (err) {
+        counterDiv.textContent = i18n.error_upload_leaf;
+        console.error(err);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function appendChatBubble(role, text) {
+      const box = document.getElementById('chatMessages');
+      const hint = box.querySelector('.chat-hint');
+      if (hint) hint.remove();
+
+      const div = document.createElement('div');
+      div.className = role === 'user' ? 'chat-bubble chat-bubble-user' : 'chat-bubble chat-bubble-ai';
+      div.textContent = text;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendChat(event) {
+      event.preventDefault();
+      const input = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('chatSendBtn');
+      const message = input.value.trim();
+      if (!message) return;
+
+      appendChatBubble('user', message);
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+
+      const thinking = document.createElement('div');
+      thinking.className = 'chat-bubble chat-bubble-ai chat-thinking';
+      thinking.textContent = i18n.chat_thinking;
+      document.getElementById('chatMessages').appendChild(thinking);
+
+      try {
+        const res = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message }),
+        });
+        const data = await res.json();
+        thinking.remove();
+        if (!res.ok) {
+          appendChatBubble('assistant', data.error || 'Error');
+          return;
+        }
+        appendChatBubble('assistant', data.reply);
+      } catch (err) {
+        thinking.remove();
+        appendChatBubble('assistant', 'Connection error.');
+        console.error(err);
+      } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+
+    async function clearChat() {
+      try {
+        await fetch(CHAT_CLEAR_URL, { method: "POST" });
+      } catch (e) { /* ignore */ }
+      const box = document.getElementById('chatMessages');
+      box.innerHTML = '<p class="chat-hint text-gray-500">' + i18n.chat_empty_hint + '</p>';
     }
   </script>
 </body>

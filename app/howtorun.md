@@ -21,16 +21,18 @@ Coffee Leaf Disease Detector/
 
 ## What This System Does
 
-The app is a Flask web application that:
+The app is a Flask web application (**CoffeeVision**) that:
 
-1. Lets users **register and log in**
+1. Lets users **register and log in** (English or Kiswahili)
 2. Accepts a **coffee leaf image** (upload or webcam capture)
 3. Classifies the image into one of three classes using an ONNX model:
    - **healthy leaves**
    - **Leaf rust**
    - **Phoma**
-4. Shows the **confidence score** and **countermeasures** for detected diseases
-5. Saves uploaded and classified images under `classified_images/`
+4. Shows the **confidence score**
+5. Provides **AI-generated farmer advisories** (GGUF in English; curated Kiswahili)
+6. Includes an **offline chatbot** (**Ask CoffeeVision**) for follow-up questions
+7. Saves uploaded and classified images under `classified_images/`
 
 ---
 
@@ -39,9 +41,9 @@ The app is a Flask web application that:
 | Requirement | Details |
 |-------------|---------|
 | **Python** | 3.10 or newer (3.10+ recommended) |
-| **Internet** | Needed only for first-time `pip install` and Tailwind CDN in the browser |
+| **Internet** | Needed only for first-time `pip install` and model downloads |
 | **Web browser** | Chrome, Edge, or Firefox |
-| **Disk space** | ~500 MB for Python packages + model file |
+| **Disk space** | ~800 MB for Python packages + ONNX + GGUF models |
 
 ### Check Python
 
@@ -63,9 +65,11 @@ Coffee Leaf Disease Detector/
 ├── download_model.sh       # Downloads model to model/
 ├── REPORT.md               # Technical report for judges
 ├── model/
-│   └── coffee_model.onnx   # Trained ONNX model (required)
+│   ├── coffee_model.onnx   # Trained ONNX classifier (required)
+│   └── SmolLM2-360M-Instruct-Q4_K_M.gguf  # Offline advisor (required for AI chat/advisory)
 └── app/
     ├── onnx_server.py      # Main Flask server (start this)
+    ├── llm_advisor.py      # GGUF / llama.cpp integration
     ├── requirements.txt
     ├── users.db            # Auto-created on first run
     ├── classified_images/  # Auto-created
@@ -74,7 +78,7 @@ Coffee Leaf Disease Detector/
     └── static/
 ```
 
-**Important:** Run `download_model.ps1` or `download_model.sh` from the **repo root** before starting the server. The model must exist at `model/coffee_model.onnx`.
+**Important:** Run `download_model.ps1` and `download_classifier.ps1` from the **repo root** before starting the server. You need both `model/coffee_model.onnx` (classifier) and `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` (offline advisor).
 
 ---
 
@@ -133,13 +137,21 @@ This installs:
 - **numpy** — numerical operations
 - **onnxruntime** — ONNX model inference
 - **Pillow** — image loading and saving
+- **llama-cpp-python** — on-device GGUF inference for advisories and chat
 
-### 6. Verify the model file
+`llama-cpp-python` may take several minutes to install on Windows (it compiles native code). If install fails, try:
+
+```powershell
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+```
+
+### 6. Verify the model files
 
 From the **repo root**:
 
 ```powershell
 dir model\coffee_model.onnx
+dir model\SmolLM2-360M-Instruct-Q4_K_M.gguf
 ```
 
 ---
@@ -199,7 +211,10 @@ You will be redirected to the login page.
 2. Select a coffee leaf photo from your PC
 3. Click **Classify Image**
 4. View the predicted class and confidence percentage
-5. Click **View Countermeasures** for disease-specific advice
+5. Click **View Countermeasures** for an AI-generated farmer advisory (loads the GGUF model on first use; may take 10–30 seconds on CPU)
+6. Use the **Ask CoffeeVision** chat panel for follow-up questions (same offline model)
+
+**Note:** If the GGUF file is missing or `llama-cpp-python` is not installed, advisories fall back to saved text in `locales/`. Chat will show an unavailable message.
 
 **Option B — Webcam capture**
 
@@ -239,11 +254,26 @@ python test_predict.py
 
 ```json
 {
+  "class_key": "leaf_rust",
   "class": "Leaf rust",
   "confidence": 0.9999,
-  "saved_path": "classified_images/Leaf_rust/Leaf_rust_1234567890.jpg"
+  "saved_path": "classified_images/Leaf_rust/Leaf_rust_1234567890.jpg",
+  "llm_available": true
 }
 ```
+
+### LLM APIs (login required)
+
+After logging in in the browser (session cookie), you can call:
+
+| Endpoint | Method | Body | Purpose |
+|----------|--------|------|---------|
+| `/api/llm-status` | GET | — | Check if GGUF + llama-cpp-python are ready |
+| `/api/advisory` | POST | `{"class_key":"leaf_rust","confidence":0.99}` | Generate farmer advisory HTML |
+| `/api/chat` | POST | `{"message":"How do I treat leaf rust?"}` | Chat reply (uses session history) |
+| `/api/chat/clear` | POST | — | Clear chat history |
+
+Advisory and chat use `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` via `llm_advisor.py`. First call loads the model into memory (~258 MB).
 
 ---
 
@@ -274,7 +304,21 @@ Ensure your virtual environment is activated if you use one.
 
 ### Server fails on startup — model not found
 
-Error relates to `model/coffee_model.onnx`. Run `download_model.ps1` from the repo root.
+Error relates to `model/coffee_model.onnx`. Run `download_classifier.ps1` from the repo root.
+
+### Advisories show "Using saved advisory" or chat says unavailable
+
+1. Run `download_model.ps1` from repo root (GGUF file ~248 MB).
+2. Install `llama-cpp-python` (see Step 5 — may take several minutes on Windows).
+3. Restart `python onnx_server.py`. First advisory/chat request loads the model (slow on CPU).
+
+### `llama-cpp-python` install fails on Windows
+
+Try the prebuilt CPU wheel:
+
+```powershell
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu
+```
 
 ### `python` command not found
 
@@ -345,4 +389,4 @@ python onnx_server.py
 
 - **User data** is stored in `users.db` (SQLite). Passwords are hashed; do not commit production secrets.
 - **Debug mode** is enabled in `onnx_server.py` for local development. Disable `debug=True` before deploying to production.
-- The frontend loads Tailwind CSS from a CDN; no separate frontend build step is required.
+- Styles are served from `app/static/css/app.css`; no separate frontend build step is required.

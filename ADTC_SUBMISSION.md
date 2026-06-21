@@ -37,11 +37,25 @@ An **end-to-end, on-device language model** that runs **without cloud dependenci
 
 > Crop, livestock, weather, and market advisory for farmers and extension officers.
 
-Our solution: **offline coffee leaf disease detection** (ONNX CNN) plus **bilingual farmer advisories** (GGUF LLM + static locales), targeting Ugandan smallholders.
+Our solution: **offline coffee leaf disease detection** (ONNX CNN) plus **AI advisories and an offline farmer chatbot** (GGUF LLM + curated Kiswahili locales), targeting Ugandan smallholders.
 
-### ADTC Standard Laptop (evaluation hardware)
+### Participant laptop (our hardware)
 
-All benchmarks are reported against this profile:
+Development, profiling, and demos were run on:
+
+| Component | Specification |
+|-----------|---------------|
+| **Model** | HP EliteBook |
+| **CPU** | Intel Core i5, 2.20 GHz |
+| **RAM** | **8 GB** |
+| **Storage** | **500 GB** |
+| **Graphics** | Integrated only (no discrete GPU) |
+
+Host profiler output shows `measured_on: participant_laptop` from this machine.
+
+### ADTC Standard Laptop (official evaluation hardware)
+
+Judges benchmark against this reference profile:
 
 | Component | Specification |
 |-----------|---------------|
@@ -91,7 +105,7 @@ Must include (per Devpost):
 - **Project title** — AI-based Coffee Leaf Disease Detector and Advisory System  
 - **Description** — summary + link to repo  
 - **Video URL** — ≤ 2 minutes (YouTube/Vimeo/etc.)  
-- **Screenshots** — login, classification, Kiswahili UI, team page  
+- **Screenshots** — login, classification, **chatbot panel**, Kiswahili UI, AI advisory  
 - **GitHub repo URL** — public link  
 
 ### 5. Semi-final / final (if selected)
@@ -152,7 +166,7 @@ Uses Docker (`--memory=7.5g`) + official profiler image (CPU-only `llama.cpp`). 
 
 **Latest constrained run (21 Jun 2026):** [`submission_constrained.json`](submission_constrained.json) — see [`REPORT.md`](REPORT.md) §5.
 
-| Metric | Constrained (7.5 GB Docker) | Host (19.9 GB Windows) |
+| Metric | Constrained (7.5 GB Docker) | Host (HP EliteBook, 8 GB RAM) |
 |--------|----------------------------|--------------------------|
 | TPS | 2.82 | 17.44 |
 | Peak RSS | 375 MB | 394 MB |
@@ -179,7 +193,7 @@ Open http://localhost:5000
 
 | Model | File | ADTC profiler | Our app |
 |-------|------|---------------|---------|
-| **LLM (GGUF)** | `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` | ✅ Evaluated | Agriculture Q&A |
+| **LLM (GGUF)** | `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` | ✅ Evaluated | English advisories + farmer chatbot |
 | **CNN (ONNX)** | `model/coffee_model.onnx` | Not evaluated | Leaf photo classification |
 
 The ONNX CNN **cannot** be converted to GGUF. ADTC requires **llama.cpp + GGUF** for scoring; our vision classifier stays ONNX.
