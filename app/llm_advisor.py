@@ -99,11 +99,15 @@ def _infer_class_from_message(message: str) -> str | None:
     m = message.lower()
     if any(k in m for k in ("ukungu", "vumbi", "manjano", "machungwa", "rust", "orange")):
         return "leaf_rust"
-    if any(k in m for k in ("phoma", "doa nyeusi", "vidonda", "hole")):
+    if any(k in m for k in ("phoma", "doa nyeusi", "doa", "nyeusi", "vidonda", "hole", "kauka")):
         return "phoma"
     if any(k in m for k in ("afya", "mzima", "healthy", "haiathirika")):
         return "healthy_leaves"
     return None
+
+
+def _curated_plain_advisory(class_key: str, lang: str) -> str:
+    return _html_to_plain(get_advisory(class_key, lang))
 
 
 def _kiswahili_reply_poor(reply: str, user_message: str) -> bool:
@@ -158,9 +162,22 @@ def _completion(messages: list[dict], max_tokens: int = 256, lang: str = "en") -
     return (text or "").strip()
 
 
+def _normalize_llm_text(text: str) -> str:
+    """Strip HTML tags and normalize whitespace from LLM output."""
+    text = text.strip()
+    text = re.sub(r"</p>\s*", "\n\n", text, flags=re.I)
+    text = re.sub(r"<br\s*/?>", "\n", text, flags=re.I)
+    text = re.sub(r"<p[^>]*>", "", text, flags=re.I)
+    text = re.sub(r"</?li>", "\n", text, flags=re.I)
+    text = re.sub(r"</?ul>", "\n", text, flags=re.I)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
 def text_to_html(text: str) -> str:
     """Plain LLM text -> safe HTML for the UI."""
-    text = text.strip()
+    text = _normalize_llm_text(text)
     text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
     lines = text.splitlines()
     parts: list[str] = []
@@ -170,6 +187,8 @@ def text_to_html(text: str) -> str:
             continue
         if line.startswith(("- ", "* ", "• ")):
             parts.append(f"• {html.escape(line[2:].strip())}")
+        elif re.match(r"^\d+[\).]\s+", line):
+            parts.append(html.escape(line))
         else:
             parts.append(html.escape(line))
     return "<br>".join(parts) if parts else html.escape(text)
@@ -193,6 +212,7 @@ def generate_advisory(class_key: str, confidence: float, lang: str) -> tuple[str
         system = (
             "You are CoffeeVision, an offline agriculture assistant for Ugandan coffee farmers. "
             "Give practical advice only about coffee leaf health and farming. "
+            "Plain text only — never use HTML tags like <p> or <br>. "
             + COFFEE_FACTS_EN
             + " "
             + _lang_instruction(lang)
@@ -204,7 +224,7 @@ def generate_advisory(class_key: str, confidence: float, lang: str) -> tuple[str
             "1) What this means\n"
             "2) Key symptoms to watch for\n"
             "3) Immediate countermeasures and prevention\n"
-            "Use short paragraphs or bullet points. Be practical for smallholders."
+            "Use short paragraphs or bullet points. Plain text only — no HTML tags."
         )
         text = _completion(
             [{"role": "system", "content": system}, {"role": "user", "content": user}],
@@ -222,9 +242,16 @@ def generate_chat_reply(
     lang: str,
     history: list[dict],
     classification: dict | None = None,
-) -> tuple[str, str]:
-    """Returns (reply_text, source)."""
+) -> tuple[str, str, str | None]:
+    """Returns (reply_text, source, class_key_if_curated)."""
     lang = normalize_lang(lang)
+    inferred_key = _infer_class_from_message(user_message)
+    if not inferred_key and classification:
+        inferred_key = classification.get("class_key")
+
+    if inferred_key:
+        return _curated_plain_advisory(inferred_key, lang), "curated", inferred_key
+
     system = (
         "You are CoffeeVision, an offline coffee agriculture assistant for farmers "
         "in Uganda and East Africa. Answer questions about coffee diseases, crop care, "
@@ -251,24 +278,25 @@ def generate_chat_reply(
             messages.append({"role": role, "content": content})
     messages.append({"role": "user", "content": user_message.strip()})
 
-    inferred_key = _infer_class_from_message(user_message)
-    if lang == "sw" and inferred_key:
-        return _html_to_plain(get_advisory(inferred_key, "sw")), "static"
-
     try:
         text = _completion(messages, max_tokens=220, lang=lang)
         if lang == "sw" and _kiswahili_reply_poor(text, user_message):
             print("LLM Kiswahili reply low quality; using curated fallback.")
-            return _kiswahili_chat_fallback(user_message, classification), "static"
-        return text, "llm"
+            fb = _kiswahili_chat_fallback(user_message, classification)
+            fb_key = _infer_class_from_message(user_message)
+            return fb, "static", fb_key
+        return text, "llm", None
     except Exception as exc:
         print(f"LLM chat fallback: {exc}")
         return (
-            "The offline advisor is unavailable. Run download_model.ps1 and install "
-            "llama-cpp-python, then restart the server."
-            if lang == "en"
-            else "Mshauri wa ndani haupatikani. Pakia modeli ya GGUF na llama-cpp-python, kisha washa upya seva.",
+            (
+                "The offline advisor is unavailable. Run download_model.ps1 and install "
+                "llama-cpp-python, then restart the server."
+                if lang == "en"
+                else "Mshauri wa ndani haupatikani. Pakia modeli ya GGUF na llama-cpp-python, kisha washa upya seva."
+            ),
             "static",
+            None,
         )
 
 
@@ -320,6 +348,13 @@ def localize_chat_message(msg: dict, target_lang: str) -> str:
     if target_lang in translations:
         return translations[target_lang]
 
+    class_key = msg.get("class_key")
+    if class_key and msg.get("source") in ("curated", "static"):
+        translated = _curated_plain_advisory(class_key, target_lang)
+        translations[target_lang] = translated
+        msg["translations"] = translations
+        return translated
+
     source_lang = normalize_lang(msg.get("lang", "en"))
     source_text = (msg.get("content") or "").strip()
     if source_lang == target_lang:
@@ -335,24 +370,47 @@ def localize_chat_message(msg: dict, target_lang: str) -> str:
 def localize_chat_history(history: list[dict], target_lang: str) -> list[dict]:
     """Build display-ready history in the requested language."""
     display: list[dict] = []
+    last_user_key: str | None = None
     for msg in history:
         role = msg.get("role", "user")
         if role not in ("user", "assistant"):
             continue
+        if role == "user":
+            last_user_key = msg.get("class_key") or _infer_class_from_message(
+                msg.get("content") or ""
+            )
+            if last_user_key and not msg.get("class_key"):
+                msg["class_key"] = last_user_key
+        if role == "assistant" and not msg.get("class_key") and last_user_key:
+            msg["class_key"] = last_user_key
+            msg["source"] = msg.get("source") or "curated"
+            msg.pop("translations", None)
         content = localize_chat_message(msg, target_lang)
         if content:
             display.append({"role": role, "content": content})
     return display
 
 
-def store_chat_message(history: list[dict], role: str, content: str, lang: str) -> None:
+def store_chat_message(
+    history: list[dict],
+    role: str,
+    content: str,
+    lang: str,
+    class_key: str | None = None,
+    source: str | None = None,
+) -> None:
     lang = normalize_lang(lang)
     content = (content or "").strip()
     if not content or role not in ("user", "assistant"):
         return
-    history.append({
+    entry: dict = {
         "role": role,
         "content": content,
         "lang": lang,
         "translations": {lang: content},
-    })
+    }
+    if class_key:
+        entry["class_key"] = class_key
+    if source:
+        entry["source"] = source
+    history.append(entry)

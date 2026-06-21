@@ -20,6 +20,7 @@ from llm_advisor import (
     llm_status,
     localize_chat_history,
     store_chat_message,
+    _infer_class_from_message,
 )
 from PIL import Image
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -301,15 +302,20 @@ def api_chat():
         return jsonify({"error": t["error_empty_message"]}), 400
 
     history = session.get("chat_history") or []
-    reply, source = generate_chat_reply(
+    reply, source, reply_class_key = generate_chat_reply(
         message,
         lang,
         history,
         session.get("last_classification"),
     )
 
-    store_chat_message(history, "user", message, lang)
-    store_chat_message(history, "assistant", reply, lang)
+    user_class_key = _infer_class_from_message(message)
+    store_chat_message(
+        history, "user", message, lang, class_key=user_class_key, source=None
+    )
+    store_chat_message(
+        history, "assistant", reply, lang, class_key=reply_class_key, source=source
+    )
     session["chat_history"] = history[-20:]
 
     return jsonify({"reply": reply, "source": source})

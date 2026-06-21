@@ -9,31 +9,35 @@
 
   <div class="flex-grow mt-24 p-6 pb-10">
     <div class="max-w-5xl mx-auto text-center mb-10">
-      <h1 class="text-3xl font-bold text-white mb-3">{{ t.team_title }}</h1>
-      <p class="text-lg text-white max-w-2xl mx-auto" style="opacity: 0.9;">{{ t.team_intro }}</p>
+      <h1 class="home-hero-title text-3xl font-bold mb-3">{{ t.team_title }}</h1>
+      <p class="home-hero-subtitle text-lg max-w-2xl mx-auto">{{ t.team_intro }}</p>
     </div>
 
     <div class="max-w-5xl mx-auto grid grid-cols-1 md-grid-2 gap-8">
-      <div class="bg-opacity-95 text-gray-900 shadow-lg rounded-2xl p-6 text-left" style="background: rgba(255,255,255,0.95); border-radius: 1rem;">
-        <img src="{{ url_for('static', filename='images/joseph-walusimbi.jpg') }}"
-             alt="Joseph Walusimbi" class="team-photo">
-        <h2 class="text-2xl font-bold text-blue-700 text-center mb-1">Joseph Walusimbi</h2>
-        <p class="text-center text-gray-600 font-medium mb-4">{{ t.engineer }}</p>
-        <p class="text-center text-sm text-gray-500 mb-4">{{ t.university }}</p>
-        <p class="text-sm text-gray-700 text-center">
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <img src="{{ url_for('static', filename='images/joseph-walusimbi.jpg') }}"
+               alt="Joseph Walusimbi" class="team-photo">
+        </div>
+        <h2 class="text-2xl font-bold text-blue-700 mb-1">Joseph Walusimbi</h2>
+        <p class="text-gray-600 font-medium mb-4">{{ t.engineer }}</p>
+        <p class="text-sm text-gray-500 mb-4">{{ t.university }}</p>
+        <p class="text-sm text-gray-700">
           <b>{{ t.contact_label }}:</b>
           <a href="mailto:mrjosephwalusimbi@gmail.com" class="text-blue-600 underline">mrjosephwalusimbi@gmail.com</a>
           · <a href="tel:+256764123306" class="text-blue-600 underline">+256 764 123306</a>
         </p>
       </div>
 
-      <div class="bg-opacity-95 text-gray-900 shadow-lg rounded-2xl p-6 text-left" style="background: rgba(255,255,255,0.95); border-radius: 1rem;">
-        <img src="{{ url_for('static', filename='images/specioza.jpg') }}"
-             alt="Chelangat Specioza" class="team-photo">
-        <h2 class="text-2xl font-bold text-blue-700 text-center mb-1">Chelangat Specioza</h2>
-        <p class="text-center text-gray-600 font-medium mb-4">{{ t.engineer }}</p>
-        <p class="text-center text-sm text-gray-500 mb-4">{{ t.university }}</p>
-        <p class="text-sm text-gray-700 text-center">
+      <div class="team-card">
+        <div class="team-photo-wrap">
+          <img src="{{ url_for('static', filename='images/specioza.jpg') }}"
+               alt="Chelangat Specioza" class="team-photo">
+        </div>
+        <h2 class="text-2xl font-bold text-blue-700 mb-1">Chelangat Specioza</h2>
+        <p class="text-gray-600 font-medium mb-4">{{ t.engineer }}</p>
+        <p class="text-sm text-gray-500 mb-4">{{ t.university }}</p>
+        <p class="text-sm text-gray-700">
           <b>{{ t.contact_label }}:</b>
           <a href="mailto:speciozachelangat@gmail.com" class="text-blue-600 underline">speciozachelangat@gmail.com</a>
           · <a href="tel:+256742353064" class="text-blue-600 underline">+256 742 353064</a>

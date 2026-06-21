@@ -227,14 +227,32 @@ button, .btn {
 .btn-red:hover { background-color: #dc2626; }
 .btn-block { width: 100%; padding: 0.5rem; }
 
-.team-photo {
+.team-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.team-photo-wrap {
   width: 10rem;
   height: 10rem;
-  border-radius: 9999px;
-  object-fit: cover;
   margin: 0 auto 1rem;
+  border-radius: 50%;
   border: 4px solid #2563eb;
+  overflow: hidden;
+  background: #e5e7eb;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.team-photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
 }
 
 #preview, .preview-img { width: 100%; border-radius: 0.5rem; margin-top: 0.75rem; max-height: 240px; object-fit: contain; }
