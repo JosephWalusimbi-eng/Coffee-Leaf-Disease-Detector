@@ -31,6 +31,8 @@ CLASSIFIED_DIR = str(APP_DIR / "classified_images")
 # Load ONNX model
 session_model = rt.InferenceSession(MODEL_PATH)
 
+MODEL_CLASSES = ["healthy leaves", "Leaf rust", "Phoma"]
+
 BRAND_NAME = "CoffeeVision"
 BRAND_FULL = (
     "CoffeeVision: AI-based Coffee leaf disease detector and Advisory system"
