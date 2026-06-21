@@ -37,7 +37,7 @@ An **end-to-end, on-device language model** that runs **without cloud dependenci
 
 > Crop, livestock, weather, and market advisory for farmers and extension officers.
 
-Our solution: **offline coffee leaf disease detection** (ONNX CNN) plus **AI advisories and an offline farmer chatbot** (GGUF LLM + curated Kiswahili locales), targeting Ugandan smallholders.
+Our solution: **offline coffee leaf disease detection** (ONNX CNN) plus **structured farmer advisories** (curated EN/SW locales) and an **offline chatbot** (GGUF LLM for natural conversation), targeting Ugandan smallholders.
 
 ### Participant laptop (our hardware)
 
@@ -82,7 +82,7 @@ Design target: **7 GB RAM budget** for the LLM (profiler uses 7 GB as limit).
 
 | File | Status | Action |
 |------|--------|--------|
-| `metadata.json` | ⚠️ | Replace `REPLACE_WITH_YOUR_ADTF_TEAM_ID` |
+| `metadata.json` | ⚠️ | `team_id` **pending** — ADTF has not issued team IDs yet; keep placeholder until assigned (see below) |
 | `download_model.sh` | ✅ | Downloads GGUF for llama.cpp |
 | `download_classifier.ps1` | ✅ | Downloads ONNX classifier (our app) |
 | `REPORT.md` | ✅ | Technical writeup — keep updated |
@@ -193,7 +193,8 @@ Open http://localhost:5000
 
 | Model | File | ADTC profiler | Our app |
 |-------|------|---------------|---------|
-| **LLM (GGUF)** | `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` | ✅ Evaluated | English advisories + farmer chatbot |
+| **LLM (GGUF)** | `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` | ✅ Evaluated | Offline farmer chatbot (natural Q&A) |
+| **Locales** | `app/locales/en.json`, `sw.json` | Not evaluated | Structured post-classification advisories (EN/SW) |
 | **CNN (ONNX)** | `model/coffee_model.onnx` | Not evaluated | Leaf photo classification |
 
 The ONNX CNN **cannot** be converted to GGUF. ADTC requires **llama.cpp + GGUF** for scoring; our vision classifier stays ONNX.
@@ -215,6 +216,28 @@ Total pool **$16,500+** — see [Devpost prizes](https://adtc-2026.devpost.com/)
 
 ---
 
+## Team ID (`metadata.json`)
+
+**Status:** ADTF/ADTC has **not yet issued** official `team_id` values to participants. Our `metadata.json` still uses the template placeholder:
+
+```json
+"team_id": "REPLACE_WITH_YOUR_ADTF_TEAM_ID"
+```
+
+This is **expected** until organizers publish IDs. Local profiler runs and development work fine with the placeholder.
+
+**When you receive your team ID** (typically after Devpost registration confirmation or an email from ADTC organizers):
+
+1. Replace `team_id` in `metadata.json`.
+2. Re-run the profiler if you want submission JSON files to match: `.\run_profiler.ps1` or `.\run_profiler.ps1 -Constrained`.
+3. Commit and push before the final Devpost deadline.
+
+**If you still have no ID near the deadline:** contact ADTC via Devpost discussion / organizer email and ask for your assigned `team_id`. Do not invent a custom ID — judges may flag mismatched IDs during evaluation.
+
+**Until then:** complete everything else on the checklist (repo, `REPORT.md`, profiler metrics, demo video, screenshots). Only the `team_id` field is blocked.
+
+---
+
 ## Pre-submission checklist
 
 ### Registration & team
@@ -226,7 +249,7 @@ Total pool **$16,500+** — see [Devpost prizes](https://adtc-2026.devpost.com/)
 ### Repository
 
 - [ ] Repo is **public**
-- [ ] `metadata.json` — real `team_id`, no placeholders
+- [ ] `metadata.json` — real `team_id` from ADTF (**pending** — not issued yet; update when received)
 - [ ] `metadata.json` — exactly **2 test prompts**
 - [ ] `metadata.json` — `runtime: llama.cpp`, GGUF path correct
 - [ ] `bash download_model.sh` works on clean clone

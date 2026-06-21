@@ -134,18 +134,37 @@ def _kiswahili_chat_fallback(
     user_message: str,
     classification: dict | None,
 ) -> str:
+    """Short natural Kiswahili reply when the main chat completion is low quality."""
     class_key = classification.get("class_key") if classification else None
     if not class_key:
         class_key = _infer_class_from_message(user_message)
-
+    disease_hint = ""
     if class_key:
-        return _html_to_plain(get_advisory(class_key, "sw"))
-
+        disease_hint = f" Zingatia ugonjwa wa {class_key}. "
+    try:
+        text = _completion(
+            [
+                {
+                    "role": "system",
+                    "content": (
+                        "Wewe ni CoffeeVision, msaidizi wa kahawa kwa wakulima. "
+                        + disease_hint
+                        + "Andika jibu fupi kwa Kiswahili rahisi. Chini ya 120 maneno. "
+                        "Usitumie vichwa vya habari wala orodha ya 'Dalili' / 'Hatua'."
+                    ),
+                },
+                {"role": "user", "content": user_message.strip()},
+            ],
+            max_tokens=200,
+            lang="sw",
+        )
+        if not _kiswahili_reply_poor(text, user_message):
+            return text
+    except Exception as exc:
+        print(f"Kiswahili chat retry fallback: {exc}")
     return (
-        "Samahani, mfano mdogo wa AI una changamoto na Kiswahili. "
-        "Jaribu kutambua majani kwanza, au tumia ushauri huu: "
-        "Fuatilia majani kila wiki, ondoa yaliyoathirika, punguza msongamano wa mimea, "
-        "na tumia dawa ya kuua kuvu mapema wakati wa msimu wa mvua."
+        "Samahani, naomba ujaribu kuliza tena kwa maneno rahisi, "
+        "au tambua picha ya majani kupata ushauri sahihi."
     )
 
 
@@ -218,13 +237,12 @@ def generate_chat_reply(
     if not inferred_key and classification:
         inferred_key = classification.get("class_key")
 
-    if inferred_key:
-        return _curated_plain_advisory(inferred_key, lang), "curated", inferred_key
-
     system = (
         "You are CoffeeVision, an offline coffee agriculture assistant for farmers "
         "in Uganda and East Africa. Answer questions about coffee diseases, crop care, "
-        "and farming. Keep answers under 150 words. Do not refer to the internet or cloud APIs. "
+        "and farming. Keep answers under 150 words. Answer in natural conversational "
+        "language — do not use rigid Symptoms/Countermeasures section templates. "
+        "Do not refer to the internet or cloud APIs. "
         + (COFFEE_FACTS_EN + " " if lang == "en" else "")
         + _lang_instruction(lang)
     )
@@ -235,6 +253,11 @@ def generate_chat_reply(
             f"\nRecent leaf scan: {label} "
             f"({classification.get('confidence', 0) * 100:.1f}% confidence). "
             f"Prioritize advice for this disease ({ck})."
+        )
+    elif inferred_key:
+        system += (
+            f"\nThe farmer's question likely relates to {inferred_key}. "
+            "Answer naturally in conversation — do not use a rigid Symptoms/Countermeasures template."
         )
 
     messages: list[dict] = [{"role": "system", "content": system}]
@@ -250,10 +273,9 @@ def generate_chat_reply(
     try:
         text = _completion(messages, max_tokens=220, lang=lang)
         if lang == "sw" and _kiswahili_reply_poor(text, user_message):
-            print("LLM Kiswahili reply low quality; using curated fallback.")
+            print("LLM Kiswahili reply low quality; retrying with simpler prompt.")
             fb = _kiswahili_chat_fallback(user_message, classification)
-            fb_key = _infer_class_from_message(user_message)
-            return fb, "static", fb_key
+            return fb, "llm", None
         return text, "llm", None
     except Exception as exc:
         print(f"LLM chat fallback: {exc}")
@@ -301,9 +323,7 @@ def translate_chat_content(
         if not translated:
             return text
         if target_lang == "sw" and _kiswahili_reply_poor(translated, text):
-            inferred = _infer_class_from_message(text)
-            if inferred:
-                return _html_to_plain(get_advisory(inferred, "sw"))
+            return text
         return translated
     except Exception as exc:
         print(f"Chat translation fallback: {exc}")
@@ -339,21 +359,10 @@ def localize_chat_message(msg: dict, target_lang: str) -> str:
 def localize_chat_history(history: list[dict], target_lang: str) -> list[dict]:
     """Build display-ready history in the requested language."""
     display: list[dict] = []
-    last_user_key: str | None = None
     for msg in history:
         role = msg.get("role", "user")
         if role not in ("user", "assistant"):
             continue
-        if role == "user":
-            last_user_key = msg.get("class_key") or _infer_class_from_message(
-                msg.get("content") or ""
-            )
-            if last_user_key and not msg.get("class_key"):
-                msg["class_key"] = last_user_key
-        if role == "assistant" and not msg.get("class_key") and last_user_key:
-            msg["class_key"] = last_user_key
-            msg["source"] = msg.get("source") or "curated"
-            msg.pop("translations", None)
         content = localize_chat_message(msg, target_lang)
         if content:
             display.append({"role": role, "content": content})

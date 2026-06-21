@@ -13,11 +13,11 @@ Technical report for the [Africa Deep Tech Challenge 2026](https://adtc-2026.dev
 | Model | Format | Role | Runtime |
 |-------|--------|------|---------|
 | **Coffee leaf CNN** | ONNX (`coffee_model.onnx`) | Classify leaf images into 3 classes | ONNX Runtime |
-| **Advisory LLM** | GGUF (`SmolLM2-360M-Instruct-Q4_K_M.gguf`) | English advisories, farmer chatbot, ADTC evaluation | llama.cpp |
+| **Advisory LLM** | GGUF (`SmolLM2-360M-Instruct-Q4_K_M.gguf`) | Farmer chatbot, ADTC evaluation | llama.cpp |
 
 **You cannot convert the ONNX classifier to GGUF.** GGUF + `llama.cpp` are for **language models** (text in → text out). Your classifier is a **CNN** (image in → 3 class scores). Different architecture, different runtime.
 
-This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farmer advice). ADTC's [profiler](https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler) benchmarks the **GGUF LLM**; the Flask app uses **ONNX** for leaf photos and **llama-cpp-python** for live advisories and chat.
+This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farmer advice). ADTC's [profiler](https://github.com/Africa-Deep-Tech-Foundation/adtc-profiler) benchmarks the **GGUF LLM**; the Flask app uses **ONNX** for leaf photos, **curated locale JSON** for structured post-classification advisories, and **llama-cpp-python** for the offline chatbot.
 
 ### Downloads
 
@@ -32,7 +32,7 @@ This matches other agriculture submissions (e.g. vision CNN + GGUF LLM for farme
 
 Coffee farmers in Uganda and East Africa lose yield when foliar diseases—especially **coffee leaf rust** and **Phoma**—spread before farmers recognize symptoms. Expert diagnosis is scarce in rural areas. Cloud LLMs are impractical due to API cost, unreliable connectivity, and power constraints—the same barriers described in the [ADTC 2026 challenge](https://adtc-2026.devpost.com/).
 
-This system gives farmers and extension workers an **offline-capable** tool to photograph a leaf, classify disease type, receive **AI-generated advisories**, and ask follow-up questions through an **on-device chatbot** — all in **English or Kiswahili** on an **8 GB commodity laptop**.
+This system gives farmers and extension workers an **offline-capable** tool to photograph a leaf, classify disease type, receive **structured farmer advisories**, and ask follow-up questions through an **on-device chatbot** — all in **English or Kiswahili** on an **8 GB commodity laptop**.
 
 **Target users:** Smallholder coffee farmers, agricultural students, and field extension agents in Uganda and East Africa.
 
@@ -47,8 +47,8 @@ This system gives farmers and extension workers an **offline-capable** tool to p
 | **224×224 RGB input** | Standard CNN input; resize + normalize in OpenCV |
 | **ONNX Runtime** | Cross-platform, no GPU required, runs fully offline |
 | **Flask web UI** | Familiar browser workflow; upload, webcam, chat panel |
-| **GGUF + llama-cpp-python** | On-device English advisories and farmer chatbot |
-| **Locale JSON files** | `locales/en.json`, `locales/sw.json` — UI + verified Kiswahili advisories |
+| **GGUF + llama-cpp-python** | On-device farmer chatbot (natural Q&A) |
+| **Locale JSON files** | `locales/en.json`, `locales/sw.json` — UI + structured farmer advisories (EN/SW) |
 | **Local CSS** | `app/static/css/app.css` — no CDN dependency |
 | **Model in `model/`** | Matches ADTC download pattern; weights excluded from git |
 
@@ -102,10 +102,10 @@ Judges benchmark against this reference profile (our participant laptop aligns o
 |------|------------|
 | **Flask** | Lightweight local web server for farmer UI |
 | **ONNX Runtime** | Fast CPU inference for image CNN |
-| **llama-cpp-python** | Live GGUF inference for English advisories and chatbot |
+| **llama-cpp-python** | Live GGUF inference for farmer chatbot |
 | **OpenCV + Pillow** | Image resize/normalize for classifier |
 | **SQLite** | Local user accounts without cloud |
-| **Locale JSON** | Offline UI + curated Kiswahili disease advisories |
+| **Locale JSON** | Offline UI + structured farmer advisories (EN/SW) |
 | **adtc-profiler** | Pre-submission benchmark against ADTC pipeline |
 
 ---
@@ -200,45 +200,17 @@ Reports: [`submission_constrained.json`](submission_constrained.json) (constrain
 │   └── coffee_model.onnx
 └── app/                       # Flask web application
     ├── onnx_server.py
-    ├── llm_advisor.py         # GGUF advisories + chatbot
+    ├── llm_advisor.py         # Locale advisories + GGUF chatbot
     └── ...
 ```
 
 ---
 
-## 7. Demo materials (for DevPost)
-
-**Required by organizers:**
-
-- [ ] Screenshots — login, classification, **chatbot**, Kiswahili UI, AI advisory  
-- [ ] **Video (max 2 minutes)** — problem, demo, development journey  
-- [ ] Upload to DevPost with public GitHub URL  
-
-Suggested video outline:
-
-1. Problem — coffee diseases in Uganda (15 s)  
-2. Demo — upload leaf → classification → **AI advisory** → **chatbot follow-up** in English/Kiswahili (60 s)  
-3. Technical — offline on HP EliteBook (8 GB RAM), dual model + chatbot (30 s)  
-4. Team + Soroti University (15 s)  
-
----
-
-## 8. Offline verification
+## 7. Offline verification
 
 After `pip install` and model downloads:
 
 - No CDN or external API calls during classification, advisories, or chat
 - Language switching uses local JSON dictionaries
 - Styles served from `app/static/css/app.css`
-- GGUF loaded on first advisory or chat request (then stays in memory)
-
----
-
-## 9. Full system documentation
-
-See `app/SYSTEM_REPORT.md` for architecture, APIs, chatbot, and PC specifications.  
-See `TECHNICAL_REFERENCE.md` for Q&A preparation.
-
----
-
-*Submit via [adtc-2026.devpost.com](https://adtc-2026.devpost.com/) before **August 26, 2026 @ 11:45pm PDT**. Replace `team_id` in `metadata.json`. See [`ADTC_SUBMISSION.md`](ADTC_SUBMISSION.md).*
+- GGUF loaded on first **chat** request (then stays in memory); advisories use locale JSON only

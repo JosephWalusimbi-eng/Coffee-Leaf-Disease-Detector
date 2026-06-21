@@ -4,7 +4,7 @@
 **Team:** Joseph Walusimbi & Chelangat Specioza — Soroti University, Uganda  
 **Challenge:** ADTC 2026 — Agriculture domain, Laptop LLM Challenge  
 **Repository layout:** ADTC 2026 submission template  
-**Last updated:** June 2026 (classifier + AI advisories + offline farmer chatbot)
+**Last updated:** June 2026 (structured locale advisories + natural GGUF chatbot)
 
 Use this document to prepare for technical interviews, judge Q&A, and DevPost follow-ups.
 
@@ -15,8 +15,8 @@ Use this document to prepare for technical interviews, judge Q&A, and DevPost fo
 CoffeeVision is an **offline, bilingual (English / Kiswahili)** web application for **smallholder coffee farmers** in Uganda and East Africa. It combines:
 
 1. **ONNX CNN** — classifies coffee leaf photos into three classes in under ~1 second on CPU.
-2. **GGUF LLM (SmolLM2-360M)** — generates **English** farmer advisories and powers the **Ask CoffeeVision** chatbot via **llama.cpp** (`llama-cpp-python`).
-3. **Curated Kiswahili content** — verified disease advisories in `locales/sw.json` when UI language is Kiswahili.
+2. **GGUF LLM (SmolLM2-360M)** — powers the **Ask CoffeeVision** chatbot via **llama.cpp** (`llama-cpp-python`). **Get AI Advisory** uses curated locale JSON, not the LLM.
+3. **Curated locale advisories** — structured Symptoms / Countermeasures (and healthy best practices) in `locales/en.json` and `locales/sw.json` for **Get AI Advisory**.
 
 Everything runs on a commodity laptop (**HP EliteBook**, Intel i5 @ 2.20 GHz, 8 GB RAM, 500 GB storage) without internet after models are downloaded.
 
@@ -83,10 +83,10 @@ flowchart TB
     UI -->|POST JSON| Advisory
     UI -->|POST JSON| Chat
     Predict --> ORT --> ONNX
-    Advisory --> LLM
+    Advisory --> I18N
     Chat --> LLM
     LLM --> LCP --> GGUF
-    LLM -.->|fallback / Kiswahili keywords| Static
+    I18N --> Static
     I18N --> UI
     Auth --> UI
 ```
@@ -103,17 +103,18 @@ flowchart TB
 ### Request flow — advisory
 
 1. User clicks **Get AI Advisory** → `POST /api/advisory`.
-2. **Kiswahili:** returns curated HTML from `locales/sw.json` (`source: curated`).
-3. **English:** `generate_advisory()` prompts GGUF with classification context.
-4. On LLM failure → static advisory from locales (`source: static`).
+2. `generate_advisory()` returns structured HTML from `locales/en.json` or `locales/sw.json` (`source: curated`).
+3. If the class is missing in the selected language → English locale fallback (`source: static`).
+4. **No GGUF inference** on this path — instant, consistent Symptoms / Countermeasures format.
 
 ### Request flow — chat
 
 1. User types message → `POST /api/chat`.
 2. Last 8 messages from `session['chat_history']` (max 20 stored).
-3. **Kiswahili + disease keywords** → curated static advisory (fast, accurate).
-4. **English** → GGUF chat completion with coffee facts in system prompt.
-5. **Kiswahili LLM** → quality check; poor output → static fallback.
+3. **English and Kiswahili** → GGUF chat completion with coffee context in system prompt; conversational tone (no rigid advisory template).
+4. Disease keywords may hint the system prompt but do **not** return the structured locale advisory.
+5. **Kiswahili** → quality heuristic; poor output → retry with a simpler Kiswahili prompt (still natural text, not locale template).
+6. If GGUF is unavailable → short static unavailable message (`source: static`).
 
 ---
 
@@ -179,7 +180,6 @@ image_np = np.expand_dims(image_np, axis=0)  # batch dim
 | temperature | 0.35 | 0.25 |
 | top_p | 0.9 | 0.9 |
 | max_tokens (chat) | 220 | 220 |
-| max_tokens (advisory) | 380 | 380 |
 
 ---
 
@@ -226,7 +226,7 @@ image_np = np.expand_dims(image_np, axis=0)  # batch dim
 | Endpoint | Method | Body | Response |
 |----------|--------|------|----------|
 | `/api/llm-status` | GET | — | `{ "available": true, "model": "..." }` |
-| `/api/advisory` | POST | `{ "class_key", "confidence" }` optional | `{ "advisory": "<html>", "source": "llm\|curated\|static", "class_key" }` |
+| `/api/advisory` | POST | `{ "class_key", "confidence" }` optional | `{ "advisory": "<html>", "source": "curated\|static", "class_key" }` |
 | `/api/chat` | POST | `{ "message": "..." }` | `{ "reply": "...", "source": "llm\|static" }` |
 | `/api/chat/clear` | POST | — | `{ "ok": true }` |
 
@@ -264,10 +264,11 @@ Chat uses last **8** messages as LLM context; advisory uses classification from 
 
 **Kiswahili chat strategy:**
 
-1. If message contains disease keywords (`ukungu`, `vumbi`, `doa nyeusi`, etc.) → return **static Kiswahili advisory** (curated, reliable).
-2. Else try GGUF → if output is garbled/echoing → static fallback.
+1. Primary path: GGUF conversational reply (same as English).
+2. If output is garbled or echoing → retry with a simpler Kiswahili prompt (`_kiswahili_chat_fallback`).
+3. Structured locale advisories are **only** used for **Get AI Advisory**, not chat.
 
-SmolLM2-360M is **weak in Kiswahili**; hybrid approach prioritizes farmer trust over pure LLM output.
+SmolLM2-360M is **weak in Kiswahili**; the quality retry improves chat without dumping the full Symptoms/Countermeasures template into the chat panel.
 
 ---
 
@@ -277,20 +278,21 @@ SmolLM2-360M is **weak in Kiswahili**; hybrid approach prioritizes farmer trust 
 |----------|---------|
 | `gguf_available()` | Check GGUF file exists |
 | `llm_status()` | Availability for UI/API |
-| `generate_advisory()` | Post-classification farmer advisory (HTML) |
-| `generate_chat_reply()` | Conversational Q&A |
-| `_infer_class_from_message()` | Keyword → `class_key` for Kiswahili routing |
-| `_kiswahili_reply_poor()` | Heuristic quality gate |
+| `generate_advisory()` | Post-classification structured advisory (locale HTML only) |
+| `generate_chat_reply()` | Conversational Q&A (GGUF) |
+| `translate_chat_content()` | Translate chat bubbles on language switch |
+| `localize_chat_history()` | Display history in selected language |
+| `_infer_class_from_message()` | Keyword → `class_key` for chat context hints |
+| `_kiswahili_reply_poor()` | Heuristic quality gate for Kiswahili chat |
 | `text_to_html()` | Sanitize LLM text for DOM |
 
-**Lazy loading:** GGUF loads on first advisory/chat call (~10–30 s first time on CPU), then stays in memory.
+**Lazy loading:** GGUF loads on first **chat** request (~10–30 s first time on CPU), then stays in memory. Advisories do not trigger GGUF load.
 
-**Fallback chain:**
+**Fallback chain (chat only):**
 
 ```
-GGUF inference → (fail) → static locale advisory
-Kiswahili keywords → static advisory (skip LLM)
-Kiswahili LLM → (poor quality) → static advisory
+GGUF chat completion → (Kiswahili poor quality) → simpler Kiswahili retry
+                    → (GGUF missing / error) → static unavailable message
 ```
 
 ---
@@ -336,7 +338,7 @@ Coffee Leaf Disease Detector/
 │   └── SmolLM2-360M-Instruct-Q4_K_M.gguf
 └── app/
     ├── onnx_server.py         # Flask entry point
-    ├── llm_advisor.py         # GGUF integration
+    ├── llm_advisor.py         # Locale advisories + GGUF chatbot
     ├── i18n.py
     ├── requirements.txt
     ├── users.db               # auto-created
@@ -403,10 +405,10 @@ $$S_{\text{total}} = 0.50 \cdot S_{\text{acc}} + 0.30 \cdot S_{\text{perf}} + 0.
 |-----------|----------------------------------|
 | Server + ONNX load | 2–5 s |
 | Image classification | 0.5–1 s |
-| First GGUF load | 10–30 s |
-| English advisory (warm) | 5–20 s |
+| First GGUF load | 10–30 s (first chat only) |
+| Get AI Advisory | Instant (locale JSON) |
 | English chat reply (warm) | 3–15 s |
-| Kiswahili keyword chat | Instant (static text) |
+| Kiswahili chat reply (warm) | 3–20 s |
 
 | Resource | Approximate |
 |----------|-------------|
@@ -431,7 +433,7 @@ Defined in `metadata.json` (update DevPost to match):
 ## 17. Known limitations (say these confidently)
 
 1. **Three classes only** — not a general leaf detector; non-coffee images may misclassify.
-2. **360M LLM** — small model; may hallucinate fungicide names in English; Kiswahili relies on curated text for disease queries.
+2. **360M LLM** — small model; may hallucinate fungicide names in chat; Kiswahili chat uses quality retry, not structured locale dumps.
 3. **CPU-only** — no GPU acceleration configured (`n_gpu_layers=0`).
 4. **Single-user session chat** — history in Flask session, not a shared database.
 5. **No model retraining pipeline** in repo — ONNX is a fixed exported model.
@@ -463,14 +465,14 @@ Advisories fall back to static JSON. Chat returns an error message asking to ins
 
 ### “Why does Kiswahili use static text sometimes?”
 
-SmolLM2-360M is English-centric. Garbled Kiswahili misleads farmers. Keyword detection routes to expert-written advisories in `sw.json` — better UX and safety.
+**Get AI Advisory** always uses expert-written locale HTML (EN/SW) for consistent Symptoms / Countermeasures. **Chat** uses the GGUF for natural replies; if Kiswahili output is garbled, we retry with a simpler prompt — we do not inject the full structured advisory into the chat panel.
 
 ### “Difference between profiler and app LLM path?”
 
 | | Profiler | Flask app |
 |---|----------|-----------|
 | Runtime | llama.cpp CLI / Docker image | llama-cpp-python |
-| Purpose | Benchmark TPS/RAM | User advisories + chat |
+| Purpose | Benchmark TPS/RAM | Farmer chatbot (natural Q&A) |
 | Same weights? | Yes — same `.gguf` file |
 
 ### “What is cross_disciplinary_pairing in metadata?”

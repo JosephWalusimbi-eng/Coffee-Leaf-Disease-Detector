@@ -7,8 +7,8 @@ Offline bilingual (English / Kiswahili) web app for **coffee leaf disease detect
 | Capability | Technology |
 |------------|------------|
 | **Leaf classification** | ONNX CNN — healthy leaves, Leaf rust, Phoma |
-| **AI advisories** | GGUF LLM (English) + curated Kiswahili content |
-| **Farmer chatbot** | On-device chat — follow-up questions about diseases, treatment, and farming |
+| **AI advisories** | Structured curated content (English / Kiswahili locales) — Symptoms + Countermeasures |
+| **Farmer chatbot** | GGUF LLM — natural conversational follow-up questions |
 
 Developed by **Joseph Walusimbi** and **Chelangat Specioza**, Electronics & Computer Engineers, Soroti University, Uganda.
 
@@ -28,7 +28,7 @@ This repository follows the [ADTC 2026 submission template](https://github.com/A
 ### 1. Download models (from repo root)
 
 ```powershell
-.\download_model.ps1        # GGUF LLM (~248 MB) — advisories, chat, ADTC profiler
+.\download_model.ps1        # GGUF LLM (~248 MB) — chatbot + ADTC profiler
 .\download_classifier.ps1   # ONNX classifier (~29 MB) — leaf images
 ```
 
@@ -66,7 +66,7 @@ See [`app/howtorun.md`](app/howtorun.md) for full instructions.
 │   └── SmolLM2-360M-Instruct-Q4_K_M.gguf
 └── app/                       # Flask web application (CoffeeVision)
     ├── onnx_server.py         # Main server
-    ├── llm_advisor.py         # GGUF advisories + chatbot
+    ├── llm_advisor.py         # Locale advisories + GGUF chatbot
     └── ...
 ```
 

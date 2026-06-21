@@ -30,8 +30,8 @@ The app is a Flask web application (**CoffeeVision**) that:
    - **Leaf rust**
    - **Phoma**
 4. Shows the **confidence score**
-5. Provides **AI-generated farmer advisories** (GGUF in English; curated Kiswahili)
-6. Includes an **offline chatbot** (**Ask CoffeeVision**) for follow-up questions
+5. Provides **structured farmer advisories** from locale JSON (English and Kiswahili — Symptoms / Countermeasures)
+6. Includes an **offline chatbot** (**Ask CoffeeVision**) powered by the GGUF LLM for natural follow-up questions
 7. Saves uploaded and classified images under `classified_images/`
 
 ---
@@ -66,7 +66,7 @@ Coffee Leaf Disease Detector/
 ├── REPORT.md               # Technical report for judges
 ├── model/
 │   ├── coffee_model.onnx   # Trained ONNX classifier (required)
-│   └── SmolLM2-360M-Instruct-Q4_K_M.gguf  # Offline advisor (required for AI chat/advisory)
+│   └── SmolLM2-360M-Instruct-Q4_K_M.gguf  # Offline chatbot (required for Ask CoffeeVision + ADTC profiler)
 └── app/
     ├── onnx_server.py      # Main Flask server (start this)
     ├── llm_advisor.py      # GGUF / llama.cpp integration
@@ -137,7 +137,7 @@ This installs:
 - **numpy** — numerical operations
 - **onnxruntime** — ONNX model inference
 - **Pillow** — image loading and saving
-- **llama-cpp-python** — on-device GGUF inference for advisories and chat
+- **llama-cpp-python** — on-device GGUF inference for chatbot
 
 `llama-cpp-python` may take several minutes to install on Windows (it compiles native code). If install fails, try:
 
@@ -211,10 +211,10 @@ You will be redirected to the login page.
 2. Select a coffee leaf photo from your PC
 3. Click **Classify Image**
 4. View the predicted class and confidence percentage
-5. Click **View Countermeasures** for an AI-generated farmer advisory (loads the GGUF model on first use; may take 10–30 seconds on CPU)
-6. Use the **Ask CoffeeVision** chat panel for follow-up questions (same offline model)
+5. Click **View Countermeasures** for a structured farmer advisory (instant — from `locales/` JSON, no GGUF)
+6. Use the **Ask CoffeeVision** chat panel for follow-up questions (loads the GGUF model on first chat; may take 10–30 seconds on CPU)
 
-**Note:** If the GGUF file is missing or `llama-cpp-python` is not installed, advisories fall back to saved text in `locales/`. Chat will show an unavailable message.
+**Note:** If the GGUF file is missing or `llama-cpp-python` is not installed, **Get AI Advisory** still works (locale text). Chat will show an unavailable message.
 
 **Option B — Webcam capture**
 
@@ -269,11 +269,11 @@ After logging in in the browser (session cookie), you can call:
 | Endpoint | Method | Body | Purpose |
 |----------|--------|------|---------|
 | `/api/llm-status` | GET | — | Check if GGUF + llama-cpp-python are ready |
-| `/api/advisory` | POST | `{"class_key":"leaf_rust","confidence":0.99}` | Generate farmer advisory HTML |
+| `/api/advisory` | POST | `{"class_key":"leaf_rust","confidence":0.99}` | Structured farmer advisory HTML (locale JSON) |
 | `/api/chat` | POST | `{"message":"How do I treat leaf rust?"}` | Chat reply (uses session history) |
 | `/api/chat/clear` | POST | — | Clear chat history |
 
-Advisory and chat use `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` via `llm_advisor.py`. First call loads the model into memory (~258 MB).
+Advisory and chat use `model/SmolLM2-360M-Instruct-Q4_K_M.gguf` via `llm_advisor.py` for **chat only**. First chat request loads the model into memory (~258 MB). **Get AI Advisory** uses locale JSON only.
 
 ---
 
@@ -306,11 +306,11 @@ Ensure your virtual environment is activated if you use one.
 
 Error relates to `model/coffee_model.onnx`. Run `download_classifier.ps1` from the repo root.
 
-### Advisories show "Using saved advisory" or chat says unavailable
+### Chat says unavailable (advisory still works)
 
 1. Run `download_model.ps1` from repo root (GGUF file ~248 MB).
 2. Install `llama-cpp-python` (see Step 5 — may take several minutes on Windows).
-3. Restart `python onnx_server.py`. First advisory/chat request loads the model (slow on CPU).
+3. Restart `python onnx_server.py`. First **chat** request loads the model (slow on CPU).
 
 ### `llama-cpp-python` install fails on Windows
 
