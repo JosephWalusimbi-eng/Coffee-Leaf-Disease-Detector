@@ -196,45 +196,14 @@ def text_to_html(text: str) -> str:
 
 def generate_advisory(class_key: str, confidence: float, lang: str) -> tuple[str, str]:
     """
-    Returns (html_advisory, source) where source is 'llm', 'curated', or 'static'.
+    Returns (html_advisory, source) where source is 'curated' or 'static'.
+    Uses structured farmer advisories from locales (Symptoms + Countermeasures).
     """
     lang = normalize_lang(lang)
-
-    # SmolLM2-360M often ignores Kiswahili; use verified locale advisories instead.
-    if lang == "sw":
-        return get_advisory(class_key, lang), "curated"
-
-    label = get_class_label(class_key, lang)
-    pct = f"{confidence * 100:.1f}"
-    disease = CLASS_CONTEXT.get(class_key, label)
-
-    try:
-        system = (
-            "You are CoffeeVision, an offline agriculture assistant for Ugandan coffee farmers. "
-            "Give practical advice only about coffee leaf health and farming. "
-            "Plain text only — never use HTML tags like <p> or <br>. "
-            + COFFEE_FACTS_EN
-            + " "
-            + _lang_instruction(lang)
-        )
-        user = (
-            f"Our vision model classified a coffee leaf as: {label} ({disease}) "
-            f"with {pct}% confidence.\n\n"
-            "Write a short farmer advisory with:\n"
-            "1) What this means\n"
-            "2) Key symptoms to watch for\n"
-            "3) Immediate countermeasures and prevention\n"
-            "Use short paragraphs or bullet points. Plain text only — no HTML tags."
-        )
-        text = _completion(
-            [{"role": "system", "content": system}, {"role": "user", "content": user}],
-            max_tokens=380,
-            lang=lang,
-        )
-        return text_to_html(text), "llm"
-    except Exception as exc:
-        print(f"LLM advisory fallback: {exc}")
-        return get_advisory(class_key, lang), "static"
+    advisory = get_advisory(class_key, lang)
+    if advisory:
+        return advisory, "curated"
+    return get_advisory(class_key, "en") or "", "static"
 
 
 def generate_chat_reply(

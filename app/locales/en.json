@@ -31,7 +31,7 @@
     "view_countermeasures": "Get AI Advisory",
     "generating_advisory": "Generating advisory (offline AI)...",
     "advisory_source_llm": "Powered by on-device CoffeeVision AI",
-    "advisory_source_curated": "Verified farmer advisory (English)",
+    "advisory_source_curated": "Verified farmer advisory (structured Symptoms + Countermeasures)",
     "advisory_source_static": "Using saved advisory (AI unavailable)",
     "chat_title": "Ask CoffeeVision",
     "chat_subtitle": "Offline chat about coffee farming and leaf diseases",
@@ -68,8 +68,8 @@
     "phoma": "Phoma"
   },
   "advisories": {
-    "healthy_leaves": "✅ <b>Your coffee plant is healthy!</b><br>Maintain good agricultural practices and monitor for early signs of disease.",
-    "leaf_rust": "<b>☕ Leaf Rust Detected!</b><br><br><b>Symptoms:</b><br>• Yellow-orange powdery spots on the underside of leaves<br>• Premature leaf drop<br><br><b>Countermeasures:</b><br>• Apply copper-based or systemic fungicides (e.g., triazoles, strobilurins) at early stages<br>• Remove, prune, and safely destroy infected leaves to prevent spread<br>• Reduce plant overcrowding to improve airflow and lower humidity<br>• Apply balanced fertilizers (especially nitrogen and potassium) to boost plant immunity<br>• Use rust-resistant coffee varieties where possible<br>• Monitor frequently during wet seasons when rust spreads fastest",
+    "healthy_leaves": "✅ <b>Healthy Leaf Detected!</b><br><br><b>Best practices to keep your coffee healthy:</b><br>• Check leaves weekly for yellow spots, dark lesions, or unusual leaf drop<br>• Keep good spacing between plants and prune for airflow<br>• Use balanced fertilizer (nitrogen and potassium)<br>• Remove fallen leaves and keep the field clean<br>• Avoid overhead irrigation when possible<br>• Choose disease-resistant coffee varieties where available<br>• Watch closely during rainy seasons",
+    "leaf_rust": "<b>☕ Leaf Rust Detected!</b><br><br><b>Symptoms:</b><br>• Yellow-orange powdery spots on the underside of leaves<br>• Premature leaf drop<br><br><b>Recommended Countermeasures:</b><br>• Apply copper-based or systemic fungicides (e.g., triazoles, strobilurins) at early stages<br>• Remove, prune, and safely destroy infected leaves to prevent spread<br>• Reduce plant overcrowding to improve airflow and lower humidity<br>• Apply balanced fertilizers (especially nitrogen and potassium) to boost plant immunity<br>• Use rust-resistant coffee varieties where possible<br>• Monitor frequently during wet seasons when rust spreads fastest",
     "phoma": "<b>Phoma Detected!</b><br><br><b>Symptoms:</b><br>• Dark brown to black lesions on leaf margins<br>• Yellow halos surrounding infected spots<br>• Premature leaf drop, especially in young plants<br><br><b>Recommended Countermeasures:</b><br>• Remove and destroy infected leaves to reduce fungal spread<br>• Apply appropriate fungicides (e.g., copper-based or mancozeb) during early infection<br>• Avoid excessive nitrogen to reduce plant vulnerability<br>• Improve spacing and pruning to enhance air circulation<br>• Ensure proper drainage and avoid overhead irrigation<br>• Use disease-resistant varieties when available"
   }
 }

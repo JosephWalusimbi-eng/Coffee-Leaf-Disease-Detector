@@ -31,7 +31,7 @@
     "view_countermeasures": "Pata Ushauri wa AI",
     "generating_advisory": "Inatengeneza ushauri (AI ya ndani)...",
     "advisory_source_llm": "Inaendeshwa na CoffeeVision AI ya ndani",
-    "advisory_source_curated": "Ushauri wa Kiswahili uliothibitishwa kwa wakulima",
+    "advisory_source_curated": "Ushauri uliothibitishwa (Dalili + Hatua za Mapendekezo)",
     "advisory_source_static": "Ushauri wa hifadhi (AI haipatikani)",
     "chat_title": "Uliza CoffeeVision",
     "chat_subtitle": "Mazungumzo ya ndani kuhusu kilimo cha kahawa na magonjwa",
@@ -68,8 +68,8 @@
     "phoma": "Phoma"
   },
   "advisories": {
-    "healthy_leaves": "✅ <b>Mkahawa wako ana afya njema!</b><br>Endelea na mazoea bora ya kilimo na ufuatilie dalili za magonjwa mapema.",
-    "leaf_rust": "<b>☕ Ukungu wa Majani Umetambuliwa!</b><br><br><b>Dalili:</b><br>• Alama za manjano na rangi ya machungwa kwenye sehemu ya chini ya majani<br>• Majani kuanguka kabla ya wakati<br><br><b>Hatua za Kuchukua:</b><br>• Tumia dawa za kuua kuvu zenye shaba au za mfumo mapema<br>• Ondoa, kata na uharibu majani yaliyoathirika salama<br>• Punguza msongamano wa mimea ili kuongeza uingizaji hewa na kupunguza unyevu<br>• Tumia mbolea zilizo na usawa (hasa nitrogen na potasiamu)<br>• Tumia aina za kahawa zisizoathirika na ukungu inapowezekana<br>• Fuatilia mara kwa mara wakati wa msimu wa mvua",
-    "phoma": "<b>Phoma Imegunduliwa!</b><br><br><b>Dalili:</b><br>• Vidonda vyeusi hadi kahawia kwenye kingo za majani<br>• pete za manjano karibu na sehemu zilizoathirika<br>• Majani kuanguka mapema, hasa kwa mimea changa<br><br><b>Hatua za Kuchukua:</b><br>• Ondoa na uharibu majani yaliyoathirika<br>• Tumia dawa sahihi za kuua kuvu (kama zenye shaba au mancozeb) mapema<br>• Epuka nitrogen kupita kiasi<br>• Ongeza nafasi na kata ili kuongeza uingizaji hewa<br>• Hakikisha mtiririko mzuri wa maji na epuka umwagiliaji juu<br>• Tumia aina zisizoathirika na magonjwa inapowezekana"
+    "healthy_leaves": "✅ <b>Majani yenye Afya Yamegunduliwa!</b><br><br><b>Mazoea bora ya kuweka kahawa wako katika afya:</b><br>• Angalia majani kila wiki kwa alama za manjano, vidonda vyeusi, au kuanguka kwa majani<br>• Weka nafasi nzuri kati ya mimea na kata ili kuongeza uingizaji hewa<br>• Tumia mbolea zilizo na usawa (nitrogen na potasiamu)<br>• Ondoa majani yaliyoanguka na weka shamba safi<br>• Epuka umwagiliaji juu inapowezekana<br>• Chagua aina za kahawa zisizoathirika na magonjwa inapowezekana<br>• Fuatilia kwa makini wakati wa msimu wa mvua",
+    "leaf_rust": "<b>☕ Ukungu wa Majani Umetambuliwa!</b><br><br><b>Dalili:</b><br>• Alama za manjano na rangi ya machungwa kwenye sehemu ya chini ya majani<br>• Majani kuanguka kabla ya wakati<br><br><b>Hatua za Mapendekezo:</b><br>• Tumia dawa za kuua kuvu zenye shaba au za mfumo mapema<br>• Ondoa, kata na uharibu majani yaliyoathirika salama<br>• Punguza msongamano wa mimea ili kuongeza uingizaji hewa na kupunguza unyevu<br>• Tumia mbolea zilizo na usawa (hasa nitrogen na potasiamu)<br>• Tumia aina za kahawa zisizoathirika na ukungu inapowezekana<br>• Fuatilia mara kwa mara wakati wa msimu wa mvua",
+    "phoma": "<b>Phoma Imegunduliwa!</b><br><br><b>Dalili:</b><br>• Vidonda vyeusi hadi kahawia kwenye kingo za majani<br>• Pete za manjano karibu na sehemu zilizoathirika<br>• Majani kuanguka mapema, hasa kwa mimea changa<br><br><b>Hatua za Mapendekezo:</b><br>• Ondoa na uharibu majani yaliyoathirika<br>• Tumia dawa sahihi za kuua kuvu (kama zenye shaba au mancozeb) mapema<br>• Epuka nitrogen kupita kiasi<br>• Ongeza nafasi na kata ili kuongeza uingizaji hewa<br>• Hakikisha mtiririko mzuri wa maji na epuka umwagiliaji juu<br>• Tumia aina zisizoathirika na magonjwa inapowezekana"
   }
 }

@@ -193,9 +193,7 @@
         counterDiv.innerHTML = data.advisory;
         sourceEl.textContent = data.source === "llm"
           ? i18n.advisory_source_llm
-          : data.source === "curated"
-            ? i18n.advisory_source_curated
-            : i18n.advisory_source_static;
+          : i18n.advisory_source_curated;
         sourceEl.classList.remove('hidden');
       } catch (err) {
         counterDiv.textContent = i18n.error_upload_leaf;
