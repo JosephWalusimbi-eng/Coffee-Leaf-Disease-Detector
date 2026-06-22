@@ -255,6 +255,32 @@ button, .btn {
   object-position: center center;
 }
 
+.team-contributions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.team-contributions h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  margin-bottom: 0.5rem;
+}
+
+.team-contributions ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.team-contributions li {
+  margin-bottom: 0.35rem;
+}
+
 #preview, .preview-img { width: 100%; border-radius: 0.5rem; margin-top: 0.75rem; max-height: 240px; object-fit: contain; }
 #camera { width: 100%; }
 
